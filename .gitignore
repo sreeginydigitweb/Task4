@@ -1,0 +1,11 @@
+node_modules/
+
+# Real credentials. product-keywords/.env.example is the template and IS
+# committed; the filled-in .env never is.
+.env
+product-keywords/.env
+
+npm-debug.log*
+*.local
+.DS_Store
+Thumbs.db
