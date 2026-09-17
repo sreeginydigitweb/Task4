@@ -9,12 +9,12 @@ output is in `evidence/build-verification.md`.
 | 2 | Run the application locally | **Pass** - starts on port 3100. |
 | 3 | Test the database connection | **Pass** - `reading ledsone as varmen_user - read-only connection: yes, no write privileges.` |
 | 4 | Test the `/product-keywords` route | **Pass** - HTTP 200, 42,725 bytes. |
-| 5 | Confirm the response is valid HTML | **Pass** - all tags balanced; 400 `<td>` for 50 rows x 8 columns. |
+| 5 | Confirm the response is valid HTML | Revalidated after the final change: 350 `<td>` for 50 rows x 7 columns. |
 | 6 | Confirm database values are HTML escaped | **Pass** - zero bare ampersands, zero stray `<` in text nodes; injection payloads neutralised in unit tests. |
 | 7 | Confirm no INSERT/UPDATE/DELETE SQL exists | **Pass** - asserted by `readonly.test.js` over every application module. |
 | 8 | Confirm no second database is used | **Pass** - asserted by `readonly.test.js`; no reference to `order_management_copy`, `listing_generator` or `amazon_competitors`. |
 | 9 | Confirm Inventory System is not modified | **Pass** - `git -C "../Inventory System" status` clean; no file written outside `Task 4`. |
-| 10 | Run available tests | **Pass** - 41 tests, 41 passing, 0 failing. |
+| 10 | Run available tests | **Pass** - 39 tests, 39 passing, 0 failing. |
 
 ## Does the page return real ledsone data?
 
@@ -31,19 +31,18 @@ keyword categories do not exist in the source.
 
 | Claim the page could have made | Does it? |
 |---|---|
-| That a keyword is the Primary one | No - `Not recorded` |
-| That keywords are Secondary | No - `Not recorded` |
-| That keywords are Long-Tail | No - `Not recorded` |
-| That keywords are Competitor keywords | No - `Not recorded` |
-| That the keyword text it shows is classified | No - the column heading says "unclassified" |
+| That a keyword is the Primary one | No - blank cell |
+| That keywords are Secondary | No - blank cell |
+| That keywords are Long-Tail | No - blank cell |
+| That keywords are Competitor keywords | No - blank cell |
 
 Three tests enforce this rather than leaving it to review:
 
 - `render.test.js` - *"the page never labels keyword text as Primary,
   Secondary, Long-Tail or Competitor"* extracts every `<td>` on a rendered page
   and asserts that none contains any of the four words.
-- `render.test.js` - *"an unclassified category renders as Not recorded, not as
-  a blank cell"* asserts exactly four honest cells per row.
+- `render.test.js` - *"unavailable keyword categories render as four actual
+  blank table cells"* asserts exactly four empty cells per row.
 - `source.test.js` - six tests assert `classifyKeywords()` returns `null` for
   all four categories, including for inputs specifically shaped to tempt a
   derivation (a single keyword, a long phrase, competitor-sounding text).

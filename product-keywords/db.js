@@ -51,12 +51,10 @@
  * ---------------------------------------------------------------------------
  * SCOPE
  *
- * Every statement this application issues is qualified with one of two
- * schemas, and reads only:
+ * Every statement this application issues is qualified with the inventory
+ * schema, and reads only:
  *
  *   inventory   products - the SKU, product id and product name
- *   listings    amazon_listings and amazon_listing_search_engine_keywords,
- *               the only keyword text in ledsone that can be tied to a product
  *
  * The other schemas in the database belong to other applications and are never
  * referenced.
@@ -126,9 +124,6 @@ function schemaName(name, fallback) {
 
 /** Products: the SKU, product id and product name. */
 export const INVENTORY_SCHEMA = schemaName('DB_INVENTORY_SCHEMA', 'inventory');
-
-/** Amazon listings and their search-engine keyword text. */
-export const LISTINGS_SCHEMA = schemaName('DB_LISTINGS_SCHEMA', 'listings');
 
 /**
  * Build the pool configuration, complaining clearly about anything missing.

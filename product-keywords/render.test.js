@@ -4,16 +4,14 @@
  * All of it is pure string building, so none of this needs a database.
  *
  * The tests that matter most here are not the ones checking the table has the
- * right columns - they are the ones checking the page does not lie: that an
- * unclassified keyword category says so, and that nothing a member of staff or
- * a supplier typed into `ledsone` can escape into the markup.
+ * right columns - they are the ones checking the page does not lie: unavailable
+ * categories are genuinely blank, and product values cannot escape into markup.
  */
 
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {
-  NOT_RECORDED,
   escapeHtml,
   layout,
   number,
@@ -31,7 +29,7 @@ const nothingKnown = () => ({
   competitor: null,
 });
 
-const oneProduct = [{ id: 8, sku: 'LHAHE27RO', title: 'Vintage Lamp Holder', keywords: ['e27 holder'] }];
+const oneProduct = [{ id: 8, sku: 'LHAHE27RO', title: 'Vintage Lamp Holder' }];
 
 function page(overrides = {}) {
   return renderProductKeywordsPage({
@@ -63,11 +61,11 @@ test('number groups thousands for reading', () => {
   assert.equal(number(44599), '44,599');
 });
 
-test('the page carries all seven requested columns, in the requested order', () => {
+test('the table contains exactly the seven requested columns, in the requested order', () => {
   const html = page();
   const headings = [...html.matchAll(/<th>(.*?)<\/th>/g)].map((match) => match[1]);
 
-  assert.deepEqual(headings.slice(0, 7), [
+  assert.deepEqual(headings, [
     'SKU',
     'Product ID',
     'Product Name',
@@ -78,31 +76,28 @@ test('the page carries all seven requested columns, in the requested order', () 
   ]);
 });
 
-test('the eighth column names the keyword text for what it is: unclassified', () => {
+test('the old unclassified keyword column is absent', () => {
   const html = page();
-  const headings = [...html.matchAll(/<th>(.*?)<\/th>/g)].map((match) => match[1]);
-
-  assert.equal(headings.length, 8);
-  assert.match(headings[7], /unclassified/i);
-  assert.match(headings[7], /ledsone/i);
+  assert.ok(!html.includes('Keywords recorded (unclassified)'));
+  assert.ok(!html.includes('Keywords recorded in ledsone (unclassified)'));
 });
 
-test('an unclassified category renders as Not recorded, not as a blank cell', () => {
+test('unavailable keyword categories render as four actual blank table cells', () => {
   const html = page();
+  const row = /<tbody>\s*<tr>([\s\S]*?)<\/tr>/.exec(html)?.[1] ?? '';
+  const cells = [...row.matchAll(/<td(?: [^>]*)?>(.*?)<\/td>/g)].map((match) => match[1]);
 
-  // Four categories, four honest cells.
-  const absent = [...html.matchAll(/<td class="absent">Not recorded<\/td>/g)];
-  assert.equal(absent.length, 4);
-  assert.equal(NOT_RECORDED, 'Not recorded');
+  assert.equal(cells.length, 7);
+  assert.deepEqual(cells.slice(3), ['', '', '', '']);
+  assert.ok(!html.includes('Not recorded'));
 });
 
-test('the page never labels keyword text as Primary, Secondary, Long-Tail or Competitor', () => {
+test('the page never places a keyword classification claim in a table cell', () => {
   const html = page({
-    products: [{ id: 1, sku: 'A', title: 'A product', keywords: ['led bulb', 'e27 screw led bulb warm white'] }],
+    products: [{ id: 1, sku: 'A', title: 'A product' }],
   });
 
-  // The words appear only as column headings and in the explanatory notice -
-  // never in a cell next to a keyword.
+  // The words appear only as column headings and in the explanatory notice.
   const cells = [...html.matchAll(/<td[^>]*>(.*?)<\/td>/g)].map((match) => match[1]);
   const claims = cells.filter((cell) => /Primary|Secondary|Long-Tail|Competitor/i.test(cell));
 
@@ -116,33 +111,14 @@ test('product values from the database are escaped before they reach the page', 
         id: 99,
         sku: '<script>alert(1)</script>',
         title: 'Lamp "quoted" & <b>bold</b>',
-        keywords: ['<img src=x onerror=alert(2)>'],
       },
     ],
   });
 
   assert.ok(!html.includes('<script>alert(1)</script>'), 'a SKU must not inject a script tag');
-  assert.ok(!html.includes('<img src=x'), 'keyword text must not inject markup');
   assert.ok(!html.includes('<b>bold</b>'), 'a title must not inject markup');
   assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
   assert.ok(html.includes('Lamp &quot;quoted&quot; &amp; &lt;b&gt;bold&lt;/b&gt;'));
-});
-
-test('a product with no keyword text says so rather than showing an empty list', () => {
-  const html = page({ products: [{ id: 6, sku: 'RD40', title: 'Threaded rod', keywords: [] }] });
-
-  const absent = [...html.matchAll(/<td class="absent">Not recorded<\/td>/g)];
-  assert.equal(absent.length, 5, 'four categories plus the keyword column');
-  assert.ok(!html.includes('<ul class="kw"></ul>'));
-});
-
-test('every recorded keyword is shown, one per list item', () => {
-  const html = page({
-    products: [{ id: 1, sku: 'A', title: 'A', keywords: ['first keyword', 'second keyword'] }],
-  });
-
-  assert.ok(html.includes('<li>first keyword</li>'));
-  assert.ok(html.includes('<li>second keyword</li>'));
 });
 
 test('the row-count line uses the page size it was given', () => {
@@ -175,10 +151,11 @@ test('tableOrEmpty escapes the empty message', () => {
   assert.ok(tableOrEmpty('', '<th>x</th>', '<b>none</b>').includes('&lt;b&gt;none&lt;/b&gt;'));
 });
 
-test('the page states plainly that the four categories are not in ledsone', () => {
+test('the page states plainly that the four categories are blank because they are not in ledsone', () => {
   const html = page();
 
   assert.match(html, /ledsone holds no such classification/i);
+  assert.match(html, /are blank because/i);
   assert.match(html, /No competitor keyword source exists in ledsone/i);
   assert.match(html, /Nothing on this page has been guessed or derived/i);
 });

@@ -45,7 +45,7 @@ test('Competitor is never populated: ledsone has no competitor keyword source', 
   assert.equal(result.competitor, null);
 });
 
-test('every category is null, so the renderer always shows Not recorded', () => {
+test('every category is null, so the renderer always shows blank cells', () => {
   const values = Object.values(classifyKeywords(['anything at all']));
 
   assert.equal(values.length, 4);

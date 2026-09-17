@@ -15,11 +15,8 @@ Database: **ledsone** (PostgreSQL). No other database is read.
 | 5 | Secondary Keywords | — | — | — | **No source in ledsone** |
 | 6 | Long-Tail Keywords | — | — | — | **No source in ledsone** |
 | 7 | Competitor Keywords | — | — | — | **No source in ledsone** |
-| 8 | Keywords recorded in ledsone (unclassified) | ledsone | `listings.amazon_listing_search_engine_keywords` | `keyword` | Confirmed, unclassified |
-
-Columns 4-7 render as `Not recorded`. Column 8 is not one of the seven
-requested columns; it was added so the keyword text ledsone *does* hold is
-visible without being filed under a category the database does not assign.
+Columns 4-7 render as actual blank HTML cells, `<td></td>`. They have no
+confirmed source classification in ledsone, so no value is displayed.
 
 ## Column 3 - a naming note
 
@@ -27,7 +24,7 @@ The product name is `inventory.products.title`. There is no `product_name`
 column. The HTML heading says "Product Name" because that is what was asked
 for; the source column is `title`.
 
-## Column 8 - the relationship
+## Keyword-text investigation (not displayed)
 
 Keyword text does not hang off the product. It reaches it through the Amazon
 listing:
@@ -75,7 +72,7 @@ a classification:
 
 | Table | Rows | Why not used for columns 4-7 |
 |---|---|---|
-| `listings.amazon_listing_search_engine_keywords` | 189,983 | Keyword text only. No category column; `view_order` is a display sequence (values 1-20+), not a keyword type. **Used for column 8.** |
+| `listings.amazon_listing_search_engine_keywords` | 189,983 | Keyword text only. No category column; `view_order` is a display sequence (values 1-20+), not a keyword type. |
 | `amazon_campaigns.keywords` | 68,751 | Has `match_type` (BROAD 23,727 / EXACT 7,518 / PHRASE 6,085). An advertising match type is not a primary/secondary distinction, and calling it one has not been approved. Reaches SKU only via `ad_group_id → ads.listing_sku`, covering 4,752 of 44,599 products (10.7%). |
 | `amazon_campaigns.keyword_performance_data` | 1,004,254 | Daily PPC performance per keyword. No classification. |
 | `google_ads.keywords` | 6,005 | Ad-group scoped. No product or SKU link. |
@@ -90,8 +87,8 @@ this version.
 
 ## Where a classification would be added
 
-`classifyKeywords()` in `product-keywords/source.js`. It receives the keyword
-strings for one product and returns one value per category; `null` means "the
-database does not say" and renders as `Not recorded`. Today it returns `null`
+`classifyKeywords()` in `product-keywords/source.js`. It returns one value per
+category; `null` means "the database does not say" and renders as an empty HTML
+cell. Today it returns `null`
 for all four. Neither the SQL, the router nor the renderer needs to change to
 switch a category on.

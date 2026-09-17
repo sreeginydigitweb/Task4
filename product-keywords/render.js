@@ -12,20 +12,9 @@
  *    keyword text in several languages, so the rule is not optional.
  *
  * 2. The page never claims a classification the database does not hold. A
- *    category with no source renders as NOT_RECORDED - not as a blank cell, and
- *    never as a keyword borrowed from somewhere else and relabelled.
+ *    category with no source renders as an empty table cell, never as a
+ *    keyword borrowed from somewhere else and relabelled.
  */
-
-/**
- * Shown wherever `ledsone` has no value for a field.
- *
- * Deliberately not a blank cell and not a dash on its own. "Not recorded" says
- * the business has not captured this, which is the true answer for all four
- * keyword categories today, and it cannot be mistaken for a value.
- *
- * One representation, used everywhere.
- */
-export const NOT_RECORDED = 'Not recorded';
 
 const ESCAPES = {
   '&': '&amp;',
@@ -73,7 +62,6 @@ const STYLES = `
   --muted: #5b6672;
   --line: #d8dee6;
   --accent: #1f4f82;
-  --absent-bg: #f1f3f6;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -83,7 +71,6 @@ const STYLES = `
     --muted: #9aa5b1;
     --line: #2e353e;
     --accent: #7fb0e6;
-    --absent-bg: #22272e;
   }
 }
 * { box-sizing: border-box; }
@@ -125,11 +112,6 @@ tbody tr:last-child td { border-bottom: 0; }
 td.sku { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; }
 td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 td.name { min-width: 26ch; max-width: 40ch; }
-td.absent { background: var(--absent-bg); color: var(--muted); font-style: italic; white-space: nowrap; }
-td.keywords { min-width: 30ch; max-width: 60ch; }
-ul.kw { margin: 0; padding-left: 16px; }
-ul.kw li { margin: 0 0 3px; overflow-wrap: anywhere; }
-ul.kw li:last-child { margin-bottom: 0; }
 .pager { display: flex; gap: 10px; align-items: center; margin-top: 14px; font-size: 13px; }
 .pager a { color: var(--accent); }
 .pager span.here { color: var(--muted); }
@@ -199,42 +181,16 @@ ${rows}
 /**
  * One cell for a keyword category.
  *
- * A category the database does not record is rendered as NOT_RECORDED in a
- * visibly muted cell, so a reader can tell at a glance that the column is
- * empty because the business has not captured it - not because this particular
- * product happens to have nothing.
+ * A category the database does not record is an actual empty HTML cell.
  *
  * @param {string|null} value
  * @returns {string}
  */
 function categoryCell(value) {
   if (value === null || value === undefined || value === '') {
-    return `<td class="absent">${escapeHtml(NOT_RECORDED)}</td>`;
+    return '<td></td>';
   }
   return `<td>${escapeHtml(value)}</td>`;
-}
-
-/**
- * The keyword text recorded against a product, as a list.
- *
- * Shown as its own column, under a heading that says exactly what it is:
- * unclassified Amazon search-engine keyword text. It is deliberately NOT
- * poured into the four category columns, because nothing in `ledsone` says
- * which of them any of it belongs to.
- *
- * @param {readonly string[]} keywords
- * @returns {string}
- */
-function keywordsCell(keywords) {
-  if (!keywords || keywords.length === 0) {
-    return `<td class="absent">${escapeHtml(NOT_RECORDED)}</td>`;
-  }
-
-  const items = keywords
-    .map((keyword) => `<li>${escapeHtml(keyword)}</li>`)
-    .join('');
-
-  return `<td class="keywords"><ul class="kw">${items}</ul></td>`;
 }
 
 /**
@@ -268,26 +224,21 @@ const HEAD =
   '<th>Primary Keyword</th>' +
   '<th>Secondary Keywords</th>' +
   '<th>Long-Tail Keywords</th>' +
-  '<th>Competitor Keywords</th>' +
-  '<th>Keywords recorded in ledsone (unclassified)</th>';
+  '<th>Competitor Keywords</th>';
 
 /**
  * The Product Keywords page.
  *
- * Seven columns because seven were asked for, plus an eighth that carries the
- * keyword text `ledsone` actually holds. The eighth column is the honest place
- * for that text: it is real data, tied to the right product, but the database
- * does not say which category any of it belongs to, so it is shown under a
- * heading that says so rather than being spread across the four category
- * columns as though it had been classified.
+ * Exactly seven columns, in the requested order. `ledsone` does not record
+ * classifications for the final four, so their cells are deliberately blank.
  *
  * @param {object} options
- * @param {Array<{id: number, sku: string, title: string, keywords: string[]}>} options.products
+ * @param {Array<{id: number, sku: string, title: string}>} options.products
  * @param {number} options.total     Products in the catalogue.
  * @param {number} options.page      1-based.
  * @param {number} options.pageCount
  * @param {number} options.pageSize  Products per page, for the row-count line.
- * @param {(keywords: readonly string[]) => {primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}} options.classify
+ * @param {() => {primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}} options.classify
  * @returns {string}
  */
 export function renderProductKeywordsPage({
@@ -300,7 +251,7 @@ export function renderProductKeywordsPage({
 }) {
   const rows = products
     .map((product) => {
-      const category = classify(product.keywords);
+      const category = classify();
 
       return (
         '          <tr>' +
@@ -311,7 +262,6 @@ export function renderProductKeywordsPage({
         categoryCell(category.secondary) +
         categoryCell(category.longTail) +
         categoryCell(category.competitor) +
-        keywordsCell(product.keywords) +
         '</tr>'
       );
     })
@@ -326,8 +276,7 @@ export function renderProductKeywordsPage({
   const notice = `    <section class="notice">
       <h2>What this page can and cannot tell you</h2>
       <p>SKU, Product ID and Product Name come from <code>inventory.products</code> in ledsone and are complete.</p>
-      <p>Primary, Secondary, Long-Tail and Competitor are shown as &ldquo;${escapeHtml(NOT_RECORDED)}&rdquo; because ledsone holds no such classification. No competitor keyword source exists in ledsone at all. Nothing on this page has been guessed or derived.</p>
-      <p>The final column is the keyword text ledsone does hold for the product &ndash; Amazon search-engine keywords, reached through the product&rsquo;s Amazon listing. It is unclassified, and is shown as recorded.</p>
+      <p>Primary, Secondary, Long-Tail and Competitor are blank because ledsone holds no such classification. No competitor keyword source exists in ledsone at all. Nothing on this page has been guessed or derived.</p>
     </section>`;
 
   return layout({

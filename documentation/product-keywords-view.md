@@ -35,7 +35,7 @@ requirement:
 
 | Table | Rows | Outcome |
 |---|---|---|
-| `listings.amazon_listing_search_engine_keywords` | 189,983 | **Used.** Keyword text that can be tied to a product. Unclassified. |
+| `listings.amazon_listing_search_engine_keywords` | 189,983 | Not displayed. Keyword text is unclassified. |
 | `amazon_campaigns.keywords` | 68,751 | Not used. Has `match_type` (EXACT/PHRASE/BROAD), but an advertising match type is not an approved primary/secondary distinction, and it covers only 10.7% of products. |
 | `amazon_campaigns.keyword_performance_data` | 1,004,254 | Not used. Daily PPC performance; no classification. |
 | `google_ads.keywords` | 6,005 | Not used. No product or SKU link. |
@@ -73,18 +73,8 @@ These are limitations of the data, not of the implementation:
   view. Competitor data exists elsewhere in the estate, in
   `order_management_copy`, which this version does not read.
 
-All four render as `Not recorded`.
-
-The keyword text ledsone *does* hold is shown in a separate, eighth column
-headed "Keywords recorded in ledsone (unclassified)". It is real, it belongs to
-the product it appears against, and the heading states that it carries no
-category - rather than spreading it across the four category columns as though
-it had been classified.
-
-Coverage is partial: on a sample page of 50 products, 24 carried keyword text.
-The text is multilingual (English, German, French, Italian, Dutch appear in the
-sampled rows) and some strings run to several hundred characters. It is shown
-as recorded, unedited.
+All four render as actual empty HTML cells: `<td></td>`. The table has exactly
+seven columns and has no unclassified-keywords column.
 
 ## 7. Request flow
 
@@ -101,9 +91,7 @@ browser
 
 ## 8. Paging
 
-50 products per page, `?page=N`. The products for a page are selected first and
-the keyword lookup runs only for those rows, so the cost is proportional to the
-page rather than the catalogue. A page number that is out of range clamps to
+50 products per page, `?page=N`. A page number that is out of range clamps to
 the last page; anything that is not a positive whole number falls back to page
 1. The limit and offset are query parameters, never interpolated text.
 
@@ -111,9 +99,9 @@ Measured: page 1 in 0.61s, page 500 in 0.44s.
 
 ## 9. Where a classification would be added
 
-`classifyKeywords()` in `product-keywords/source.js`. It takes the keyword
-strings for one product and returns one value per category; `null` means "the
-database does not say". Changing it is the only change needed to switch a
+`classifyKeywords()` in `product-keywords/source.js`. It returns one value per
+category; `null` means "the database does not say" and renders as a blank cell.
+Changing it is the only change needed to switch a
 category on - the SQL, the router and the renderer stay as they are.
 
 `product-keywords/source.test.js` asserts that all four categories are

@@ -18,8 +18,8 @@ product, in the table structure requested:
 SKU · Product ID · Product Name · Primary Keyword · Secondary Keywords ·
 Long-Tail Keywords · Competitor Keywords
 
-Three of those seven columns are backed by ledsone. Four are not, and the page
-says so rather than filling them in. See **Current data limitations** below -
+Three of those seven columns are backed by ledsone. Four are not, and their
+cells are intentionally blank rather than being filled with invented values. See **Current data limitations** below -
 it is the most important section in this file.
 
 ## Scope: ledsone only
@@ -70,7 +70,7 @@ Open <http://localhost:3100/product-keywords>.
 Every setting is documented in it.
 
 ```bash
-npm test     # 41 tests, no database required
+npm test     # 39 tests, no database required
 ```
 
 ## Available route
@@ -92,7 +92,7 @@ npm test     # 41 tests, no database required
 | Product ID | `inventory.products.id` |
 | Product Name | `inventory.products.title` (there is no `product_name` column) |
 
-**Not in ledsone - shown as `Not recorded`:**
+**Not in ledsone - intentionally blank:**
 
 | Column | Why |
 |---|---|
@@ -107,20 +107,6 @@ matching `%primary%`, `%secondary%`, `%long_tail%`, `%longtail%`,
 both unrelated to keywords. The queries are in
 `query-packs/keyword-source-investigation.md`.
 
-**The keyword text ledsone does hold** is shown in a separate eighth column,
-headed "Keywords recorded in ledsone (unclassified)". It is Amazon
-search-engine keyword text, reached through the product's Amazon listing:
-
-```
-inventory.products.sku
-    = listings.amazon_listings.mapped_sku
-listings.amazon_listings.id
-    = listings.amazon_listing_search_engine_keywords.product_id
-```
-
-Coverage is partial - on a sample page of 50 products, 24 carried keyword text
-- and the text is multilingual and unedited. It is shown as recorded.
-
 ## Keyword classifications are not invented
 
 This is a deliberate constraint, not an unfinished feature.
@@ -132,9 +118,8 @@ business has never made and that cannot be checked against anything in the
 source. Competitor Keywords cannot be derived at all - ledsone holds no
 competitor data.
 
-So the four columns say `Not recorded`, one consistent representation used
-everywhere, and the keyword text that does exist is shown under a heading that
-states it is unclassified.
+So the four unavailable categories render as actual empty `<td></td>` cells.
+There is no unclassified-keywords column.
 
 Six tests in `product-keywords/source.test.js` assert that all four categories
 return `null`, and a test in `render.test.js` extracts every table cell and
@@ -151,11 +136,11 @@ the renderer do not need to change.
 ```
 product-keywords/     the application
   db.js                 pg Pool, read-only latch, startup check
-  source.js             the two SELECTs, and the classification seam
+  source.js             the product SELECTs and classification seam
   render.js             HTML string building and escaping
   router.js             paths and page numbers
   server.js             node:http server and security headers
-  *.test.js             41 tests, no database required
+  *.test.js             39 tests, no database required
   .env.example          documented configuration template
 
 sql/                  the SQL, readable outside the JavaScript
