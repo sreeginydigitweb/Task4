@@ -12,10 +12,11 @@ Database: **ledsone** (PostgreSQL). No other database is read.
 | 2 | SKU | ledsone | `inventory.products` | `sku` | Confirmed |
 | 3 | Product ID | ledsone | `inventory.products` | `id` | Confirmed |
 | 4 | Product Name | ledsone | `inventory.products` | `title` | Confirmed |
-| 5 | Primary Keyword | ledsone | `inventory.products` | `title` | Deterministic fallback; recorded category wins if available |
-| 6 | Secondary Keywords | ledsone | `inventory.products` | `title` | Deterministic fallback; blank if no meaningful term |
-| 7 | Long-Tail Keywords | ledsone | `inventory.products` | `title` | Deterministic fallback; blank if no meaningful term |
-| 8 | Competitor Keywords | ledsone | `inventory.products` | `title` | Generic alternative terminology only; never a competitor brand |
+| 5 | Category | ledsone | `listings.shopify_listings` then `inventory.products` | `product_type`, else `title` | Confirmed where recorded; otherwise the product type the name states; blank if neither |
+| 6 | Primary Keyword | ledsone | `inventory.products` | `title` | Deterministic fallback; recorded category wins if available |
+| 7 | Secondary Keywords | ledsone | `inventory.products` | `title` | Deterministic fallback; blank if no meaningful term |
+| 8 | Long-Tail Keywords | ledsone | `inventory.products` | `title` | Deterministic fallback; blank if no meaningful term |
+| 9 | Competitor Keywords | ledsone | `inventory.products` | `title` | Generic alternative terminology only; never a competitor brand |
 
 ## Column 1 - the product image relationship
 
@@ -46,12 +47,51 @@ The `listings`, `google_ads` and `suppliers` image tables also exist in ledsone
 and are deliberately **not** read - they belong to other applications. A test
 fails the build if one is referenced.
 
-No confirmed classified category source currently exists in ledsone. The
+## Column 5 - the category relationship
+
+```
+inventory.products
+    │  products.sku = coalesce(nullif(shopify_listings.mapped_sku,''),
+    │                          shopify_listings.sku)
+    └──────────────────────────────────────►  listings.shopify_listings
+                                              .product_type
+                                              one listing per SKU, the most
+                                              recently updated
+```
+
+A LEFT join, one row per SKU (`DISTINCT ON`), so no product is duplicated and
+none is dropped. Where `product_type` is absent, the category is the product
+type the Product Name itself states, taken from the same terminology map that
+produces the Primary Keyword - not a second vocabulary written for categories.
+
+| | Products | Share |
+|---|---|---|
+| Recorded in ledsone | 19,343 | 43.3% |
+| Derived from the Product Name | 1,899 | 4.3% |
+| **With a category** | **21,242** | **47.6%** |
+| No category - blank cell | 23,394 | 52.4% |
+
+488 distinct categories. Recorded values are shown exactly as stored, including
+near-duplicates and other languages; merging or translating them would be
+editing the business's data on a guess.
+
+Other category sources in ledsone, and why they are not used:
+`staff.ph_categories` (77 curated names) reaches only 4,457 products (10.0%),
+and only through a three-hop ASIN join; `listings.bandq_categories`,
+`listings.shopify_collections`, `listings.amazon_listings.product_type` and
+`google_ads.merchant_products` belong to other applications or cover less. A
+test fails the build if any is referenced.
+
+No category is written back and no category table is created.
+
+## Columns 6-9 - the keyword categories
+
+No confirmed classified keyword source currently exists in ledsone. The
 fallback uses only Product Name. It never maps unclassified keyword text or
-advertising match types into these fields. Missing categories render as actual
+advertising match types into these fields. Missing values render as actual
 blank HTML cells, `<td></td>`.
 
-Columns 4-7 resolve in one fixed order: a recorded ledsone value if there is
+Columns 6-9 resolve in one fixed order: a recorded ledsone value if there is
 one, otherwise generation from `title`, otherwise blank. A recorded value is
 never overwritten, and a recorded value that is empty or whitespace counts as
 missing rather than as data.
@@ -59,8 +99,8 @@ missing rather than as data.
 Generation reads two things out of `title` and nothing else - the product TYPE
 (generic terminology such as "wall light switches" -> Light Switch) and
 ATTRIBUTE words the name already contains (style, colour, material,
-configuration, lamp fitting, form). Column 5 carries synonyms plus supported
-attributes, column 6 a more specific multi-word phrase, column 7 alternative
+configuration, lamp fitting, form). Column 7 carries synonyms plus supported
+attributes, column 8 a more specific multi-word phrase, column 9 alternative
 wording for the same product type. Nothing is keyed on `id` or `sku`.
 
 These generated values exist in the HTML response only. No row is written,

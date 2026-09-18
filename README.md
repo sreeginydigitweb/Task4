@@ -7,7 +7,8 @@ One page, one table, no framework. Node 20 with a single dependency (`pg`).
 
 The page itself is a plain, complete HTML file: **`product-keywords/page.html`**.
 It holds the doctype, head, title, all of the CSS, the heading, the count area,
-both paging control bars with their buttons, and the full eight-column table
+both paging control bars with their buttons, the category filter, and the
+full nine-column table
 structure including every header. Open it and you can see the whole screen
 without reading any JavaScript, and it can be shared on its own as the UI
 reference. The application only fills in values - the product rows and the
@@ -23,10 +24,10 @@ ledsone DB  ->  SQL query  ->  Node application  ->  HTML table
 Show the product catalogue alongside the keyword data recorded against each
 product, in the table structure requested:
 
-Product Image · SKU · Product ID · Product Name · Primary Keyword ·
-Secondary Keywords · Long-Tail Keywords · Competitor Keywords
+Product Image · SKU · Product ID · Product Name · Category ·
+Primary Keyword · Secondary Keywords · Long-Tail Keywords · Competitor Keywords
 
-Four of those eight columns are backed by ledsone. The four keyword columns
+Five of those nine columns are backed by ledsone. The four keyword columns
 are not: they are generated from the Product Name, and a cell stays genuinely
 blank rather than being filled with an invented value when the name supports
 nothing meaningful. See **Current data limitations** and **Keyword generation**
@@ -80,7 +81,7 @@ Open <http://localhost:3100/product-keywords>.
 Every setting is documented in it.
 
 ```bash
-npm test     # 139 tests, no database required
+npm test     # 184 tests, no database required
 ```
 
 ## The shareable single file
@@ -97,8 +98,9 @@ npm run snapshot -- --limit 200 --embed-images
 npm run snapshot -- --out share/for-review.html
 ```
 
-All eight columns, product images, and paging (Previous / Next at top and
-bottom, plus arrow keys and a `#page=N` fragment) work inside the file.
+All nine columns, product images, the category filter and paging (Previous /
+Next at top and bottom, plus arrow keys and a `#page=N&category=...` fragment)
+work inside the file.
 
 Two things to be clear about:
 
@@ -137,6 +139,7 @@ script-free - `page.html` remains its server-side template.
 | SKU | `inventory.products.sku` |
 | Product ID | `inventory.products.id` |
 | Product Name | `inventory.products.title` (there is no `product_name` column) |
+| Category | `listings.shopify_listings.product_type` joined by SKU, falling back to the product type the Product Name states. 47.6% of products have one; the rest show a blank cell. Nothing is written back. |
 
 The image rule - designated main image first, first gallery image as fallback -
 is reused unchanged from **Smart Inventory Control** (`../Inventory System`),
@@ -206,16 +209,17 @@ do not need to change.
 ```
 product-keywords/     the application
   db.js                 pg Pool, read-only latch, startup check
-  source.js             product SELECTs and category-priority seam
+  source.js             product SELECTs and keyword-priority seam
+  categories.js         product categories and the filter index
   keyword-generator.js  deterministic Product Name fallback
   page.html             THE PAGE - doctype, head, title, all CSS, heading,
                         count area, both control bars with buttons, and the
-                        complete 8-column table structure
+                        complete 9-column table structure
   render.js             supplies values for page.html; builds the rows only
   snapshot.js           builds the self-contained single-file HTML snapshot
   router.js             paths and page numbers
   server.js             node:http server and security headers
-  *.test.js             139 tests, no database required
+  *.test.js             184 tests, no database required
   .env.example          documented configuration template
 
 share/                the generated single-file HTML snapshot (build artifact)

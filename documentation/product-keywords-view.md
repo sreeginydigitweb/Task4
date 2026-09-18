@@ -56,6 +56,68 @@ gives at most one image row per product).
 There is no `product_name` column in ledsone. The heading reads "Product Name"
 because that is the requested wording; the value comes from `title`.
 
+### Category
+
+| Source | Column | Reaches |
+|---|---|---|
+| `listings.shopify_listings` | `product_type`, joined to products by SKU | 19,343 products (43.3%) |
+| Derived from `inventory.products.title` | the terminology map in `keyword-generator.js` | a further 1,899 (4.3%) |
+
+ledsone's own recorded category always wins; a category is derived from the
+product name only where the database records none. Together they cover 21,242
+of 44,636 products (47.6%) in 488 distinct categories. The remaining 23,394
+have no category and show a blank cell.
+
+The derived value is **not a second vocabulary invented for categories** - it
+is the same product-type map that already produces the Primary Keyword, so a
+derived category only ever restates the product type the name itself gives.
+
+Recorded values are shown exactly as the business stores them, near-duplicates
+and other languages included (`Pendant Light`, `Pendant Lighting`,
+`Pendant_Lamp_Lights`, `Pendelleuchten`, `LIGHT_FIXTURE`). They are not merged
+or translated: that would be editing the business's data on a guess.
+
+**Sources considered and not used.** `staff.ph_categories` holds 77 curated
+category names, but reaches only 4,457 products (10.0%) and only through a
+three-hop ASIN join, so it is narrower than the recorded product type.
+`listings.bandq_categories`, `listings.shopify_collections`,
+`listings.amazon_listings.product_type` and `google_ads.merchant_products`
+belong to other applications or cover less. A test fails the build if any of
+them is referenced.
+
+Nothing is written back. No category table is created and no category is
+stored; the value is worked out on read.
+
+### Why there is a category index
+
+A derived category is computed in JavaScript from the product name, so
+PostgreSQL cannot filter or count on it - and paging a filtered list correctly
+needs to know every matching product before it can pick out one page. So the
+whole catalogue's categories are worked out once and held in memory: the ids
+in each category, and the counts the filter shows. It costs about 3.4 seconds
+to build and roughly 17MB, and is rebuilt when it goes stale (10 minutes).
+
+### The category filter
+
+An ordinary GET form above the table: choose a category, press Filter, and the
+page reloads as `?category=...`. **No JavaScript** - the server does the
+filtering, so the live page stays script-free.
+
+- **All Categories** is the empty value, which the router reads as no filter.
+- Options are listed busiest first with their product counts, because the
+  catalogue has hundreds of marketplace categories and most cover few products.
+- The count line reports the filtered total, not the catalogue total.
+- **The chosen category is carried on every paging link**, so Next from page 3
+  of "Wall Light" lands on page 4 of "Wall Light".
+- A **Clear** link appears only while a filter is on.
+- A category that no longer exists is treated as no filter rather than as an
+  error, so a stale bookmark shows the catalogue instead of a failure.
+
+The `Content-Security-Policy` `form-action` directive moved from `'none'` to
+`'self'` for this form. It was `'none'` while the page had no form at all;
+`'self'` still refuses to let a form here submit anywhere else. The filter
+changes nothing - it selects which rows are read.
+
 ## 4. Keyword sources investigated
 
 Six keyword-bearing tables exist in ledsone. Each was examined against the

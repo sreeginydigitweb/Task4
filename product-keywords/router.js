@@ -9,6 +9,7 @@
  * be tested without opening a socket.
  */
 
+import { ALL_CATEGORIES, findCategories, resolveCategory } from './categories.js';
 import { PAGE_SIZE, classifyKeywords, countProducts, findProductKeywordPage } from './source.js';
 import { renderNotFoundPage, renderProductKeywordsPage, renderReadOnlyPage } from './render.js';
 
@@ -55,11 +56,24 @@ export function pageFrom(query) {
  * @returns {Promise<{status: number, contentType: string, body: string}>}
  */
 async function productKeywordsRoute(query) {
-  const total = await countProducts();
+  // A category that no longer exists is treated as no filter rather than as an
+  // error, so a stale bookmark shows the catalogue instead of a failure.
+  const category = await resolveCategory(query.get('category'));
+
+  // The filtered total drives paging and the count line; the catalogue total
+  // is what "All Categories" is labelled with.
+  const [total, catalogueTotal] = await Promise.all([
+    countProducts({ category }),
+    countProducts({ category: ALL_CATEGORIES }),
+  ]);
+
   const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const page = Math.min(pageFrom(query), pageCount);
 
-  const products = await findProductKeywordPage({ page, pageSize: PAGE_SIZE });
+  const [products, categories] = await Promise.all([
+    findProductKeywordPage({ page, pageSize: PAGE_SIZE, category }),
+    findCategories(),
+  ]);
 
   return html(
     renderProductKeywordsPage({
@@ -68,6 +82,9 @@ async function productKeywordsRoute(query) {
       page,
       pageCount,
       pageSize: PAGE_SIZE,
+      categories,
+      category,
+      catalogueTotal,
       // The renderer receives resolved categories, keeping title generation
       // testable without a live database.
       classify: (product) => classifyKeywords(product.title, product.keywordCategories),

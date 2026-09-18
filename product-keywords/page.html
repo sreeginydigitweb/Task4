@@ -28,20 +28,27 @@
     controls_hidden   the word "hidden" when there is only one page
     rows              the <tr> product rows, built from the database
     empty_message     a note shown only when a page has no rows
+    category_options  the <option> list for the Categories filter
+    clear_hidden      the word "hidden" unless a category is chosen
+
+  The category filter is an ordinary GET form, so it needs no JavaScript. The
+  chosen category is carried on the paging links too, which is how it survives
+  a move between pages.
 
   The product rows are the one thing not written out here: there are 44,627
   products and they are read 50 at a time, so they cannot be static markup.
-  Each row is one table row of eight cells, in the column order set by the
-  table headers below. Only the first four carry a class:
+  Each row is one table row of nine cells, in the column order set by the
+  table headers below. Only the first five carry a class:
 
-    td.img    an img element, or nothing at all
-    td.sku    SWRS1GBM
-    td.num    117
-    td.name   Screwless Flat plate Wall light switches Black Round 1 Gang
-    td        Light Switch
-    td        Wall Switch, Switch Plate, Black, 1 Gang
-    td        Black 1 Gang Screwless Light Switch
-    td        Light Switch Cover, Wall Plate Switch
+    td.img       an img element, or nothing at all
+    td.sku       SWRS1GBM
+    td.num       117
+    td.name      Screwless Flat plate Wall light switches Black Round 1 Gang
+    td.category  Light Switch
+    td           Light Switch
+    td           Wall Switch, Switch Plate, Black, 1 Gang
+    td           Black 1 Gang Screwless Light Switch
+    td           Light Switch Cover, Wall Plate Switch
 
   A keyword the product name cannot support is an empty cell rather than
   placeholder text, and every value is HTML-escaped before it reaches the page.
@@ -114,6 +121,31 @@ h1 { font-size: 26px; font-weight: 600; margin: 0 0 12px; }
 .notice h2 { font-size: 14px; margin: 0 0 6px; }
 .notice p { margin: 0 0 6px; color: var(--muted); }
 .notice p:last-child { margin-bottom: 0; }
+/* Category filter. A plain form; the server does the filtering. */
+.filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; font-size: 13px; }
+.filter label { color: var(--muted); }
+.filter select {
+  font: inherit;
+  padding: 5px 8px;
+  max-width: 34ch;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.filter .btn {
+  font: inherit;
+  padding: 5px 12px;
+  color: var(--accent);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+}
+.filter .btn:hover { border-color: var(--accent); }
+.filter .btn[hidden] { display: none; }
+td.category { min-width: 14ch; max-width: 24ch; }
 .count { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
 .scroll-hint { color: var(--muted); font-size: 12px; margin: 0 0 6px; }
 .table-scroll { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; }
@@ -168,8 +200,23 @@ footer { margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--line);
     <!-- ================= PAGE HEADING ================= -->
     <h1>Product Keywords</h1>
 
+    <!-- ================= CATEGORY FILTER =================
+         An ordinary GET form: choosing a category and pressing Filter reloads
+         the page with ?category=... The server does the filtering, so this
+         needs no JavaScript. The option list and the current selection are
+         filled in from the database; "All Categories" is the empty value,
+         which the server reads as no filter. -->
+    <form class="filter" method="get" action="/product-keywords">
+      <label for="category">Categories</label>
+      <select name="category" id="category">{{category_options}}</select>
+      <button type="submit" class="btn">Filter</button>
+      <a class="btn" href="/product-keywords"{{clear_hidden}}>Clear</a>
+    </form>
+
     <!-- ================= COUNT AREA =================
-         Dynamic product count, e.g. "Showing 101-150 of 44,627 products." -->
+         Dynamic product count, e.g. "Showing 101-150 of 44,627 products."
+         It reports the count for the chosen category, not the whole
+         catalogue. -->
     <p class="count">{{count_text}}</p>
 
     <!-- ================= TOP CONTROLS / PAGINATION =================
@@ -195,6 +242,7 @@ footer { margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--line);
             <th>SKU</th>
             <th>Product ID</th>
             <th>Product Name</th>
+            <th>Category</th>
             <th>Primary Keyword</th>
             <th>Secondary Keywords</th>
             <th>Long-Tail Keywords</th>

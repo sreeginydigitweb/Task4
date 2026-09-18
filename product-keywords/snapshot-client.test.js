@@ -185,6 +185,7 @@ const product = (n, overrides = {}) => ({
   sku: `SKU${n}`,
   id: String(n),
   name: `Product ${n}`,
+  category: `Category ${n}`,
   primary: `Primary ${n}`,
   secondary: `Secondary ${n}`,
   longTail: `LongTail ${n}`,
@@ -210,7 +211,7 @@ test('every drawn row has eight cells, in the column order', () => {
   const { elements } = run(FIVE);
 
   for (const row of elements.rows.children) {
-    assert.equal(row.children.length, 8, 'eight cells per row');
+    assert.equal(row.children.length, 9, 'nine cells per row');
   }
 
   const first = elements.rows.children[0].children;
@@ -218,10 +219,11 @@ test('every drawn row has eight cells, in the column order', () => {
   assert.equal(first[1].textContent, 'SKU1');
   assert.equal(first[2].textContent, '1');
   assert.equal(first[3].textContent, 'Product 1');
-  assert.equal(first[4].textContent, 'Primary 1');
-  assert.equal(first[5].textContent, 'Secondary 1');
-  assert.equal(first[6].textContent, 'LongTail 1');
-  assert.equal(first[7].textContent, 'Competitor 1');
+  assert.equal(first[4].textContent, 'Category 1');
+  assert.equal(first[5].textContent, 'Primary 1');
+  assert.equal(first[6].textContent, 'Secondary 1');
+  assert.equal(first[7].textContent, 'LongTail 1');
+  assert.equal(first[8].textContent, 'Competitor 1');
 });
 
 test('a product with an image gets an img element with alt text and a size', () => {
@@ -373,6 +375,157 @@ test('arrow keys page, but only when nothing else has focus', () => {
   assert.equal(elements['position-top'].textContent, 'Page 1 of 3');
 });
 
+// ---------------------------------------------------------------------------
+// The category filter, inside the file.
+// ---------------------------------------------------------------------------
+
+/** Four in "Lights", one in "Switches", one with no category. */
+const MIXED = [
+  product(1, { category: 'Lights' }),
+  product(2, { category: 'Lights' }),
+  product(3, { category: 'Switches' }),
+  product(4, { category: 'Lights' }),
+  product(5, { category: null }),
+  product(6, { category: 'Lights' }),
+];
+
+/** Pick a category as a person would, and let the change handler run. */
+function choose(context, value) {
+  context.elements.category.value = value;
+  for (const handler of context.elements.category.listeners.change ?? []) handler({ target: context.elements.category });
+}
+
+test('the filter offers All Categories and every category in the file', () => {
+  const html = buildSnapshotHtml({ rows: MIXED, styles: '.x {}', pageSize: 2 });
+  const options = [...html.matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)];
+
+  assert.equal(options[0][1], '', 'All Categories is the empty value');
+  assert.equal(options[0][2], 'All Categories (6)');
+  // Busiest first.
+  assert.equal(options[1][1], 'Lights');
+  assert.equal(options[1][2], 'Lights (4)');
+  assert.equal(options[2][2], 'Switches (1)');
+  assert.equal(options.length, 3, 'the uncategorised product adds no option');
+});
+
+test('choosing a category filters the table to it', () => {
+  const context = run(MIXED);
+  choose(context, 'Lights');
+
+  const shown = context.elements.rows.children.map((row) => row.children[1].textContent);
+  assert.deepEqual(shown, ['SKU1', 'SKU2'], 'page 1 of the filtered rows');
+  assert.equal(context.elements['position-top'].textContent, 'Page 1 of 2', 'four rows at two per page');
+});
+
+test('the count updates to the filtered total', () => {
+  const context = run(MIXED);
+  choose(context, 'Lights');
+
+  assert.equal(context.elements.count.textContent, 'Showing 1–2 of 4 products in Lights in this snapshot.');
+});
+
+test('pagination keeps working after filtering, within the category', () => {
+  const context = run(MIXED);
+  choose(context, 'Lights');
+  context.elements['next-top'].click();
+
+  const shown = context.elements.rows.children.map((row) => row.children[1].textContent);
+  assert.deepEqual(shown, ['SKU4', 'SKU6'], 'the rest of the Lights rows, skipping SKU3 and SKU5');
+  assert.equal(context.elements['position-top'].textContent, 'Page 2 of 2');
+  assert.equal(context.elements['next-top'].disabled, true, 'no further page in this category');
+});
+
+test('the chosen category is preserved while paging', () => {
+  const context = run(MIXED);
+  choose(context, 'Lights');
+  context.elements['next-top'].click();
+
+  assert.match(context.window.location.hash, /category=Lights/, 'the address keeps the category');
+  assert.match(context.window.location.hash, /page=2/);
+
+  // Every row on the second page is still in the chosen category.
+  for (const row of context.elements.rows.children) {
+    assert.equal(row.children[4].textContent, 'Lights');
+  }
+});
+
+test('filtering restarts at page 1, because page 3 of everything is not page 3 of one category', () => {
+  const context = run(MIXED);
+  context.elements['next-top'].click();
+  context.elements['next-top'].click();
+  assert.equal(context.elements['position-top'].textContent, 'Page 3 of 3');
+
+  choose(context, 'Lights');
+  assert.equal(context.elements['position-top'].textContent, 'Page 1 of 2');
+});
+
+test('All Categories brings everything back', () => {
+  const context = run(MIXED);
+  choose(context, 'Switches');
+  assert.equal(context.elements.count.textContent, 'Showing 1–1 of 1 products in Switches in this snapshot.');
+
+  choose(context, '');
+  assert.equal(context.elements.count.textContent, 'Showing 1–2 of 6 products in this snapshot.');
+  assert.equal(context.elements['position-top'].textContent, 'Page 1 of 3');
+});
+
+test('Clear resets the filter', () => {
+  const context = run(MIXED);
+  choose(context, 'Lights');
+  context.elements['clear-filter'].click();
+
+  assert.equal(context.elements['position-top'].textContent, 'Page 1 of 3');
+  assert.equal(context.elements.category.value, '', 'the picker goes back to All Categories');
+});
+
+test('a product with no category is only ever shown under All Categories', () => {
+  const context = run(MIXED);
+
+  choose(context, 'Lights');
+  const inLights = context.elements.rows.children.map((row) => row.children[1].textContent);
+  assert.ok(!inLights.includes('SKU5'));
+
+  choose(context, 'Switches');
+  const inSwitches = context.elements.rows.children.map((row) => row.children[1].textContent);
+  assert.ok(!inSwitches.includes('SKU5'));
+});
+
+test('a blank category renders as an empty cell', () => {
+  const context = run([product(5, { category: null }), product(6, { category: '' })]);
+
+  for (const row of context.elements.rows.children) {
+    assert.equal(row.children[4].textContent, '', 'no placeholder text');
+    assert.equal(row.children[4].children.length, 0);
+  }
+});
+
+test('a filtered page can be opened directly from the address', () => {
+  const context = run(MIXED, '#page=2&category=Lights');
+
+  assert.equal(context.elements['position-top'].textContent, 'Page 2 of 2');
+  assert.equal(context.elements.category.value, 'Lights', 'the picker shows the category');
+  assert.deepEqual(
+    context.elements.rows.children.map((row) => row.children[1].textContent),
+    ['SKU4', 'SKU6'],
+  );
+});
+
+test('a category the file does not hold is treated as no filter', () => {
+  for (const hash of ['#category=Nonsense', '#page=1&category=', '#category=%E0%A4%A']) {
+    const context = run(MIXED, hash);
+
+    assert.equal(context.elements.count.textContent, 'Showing 1–2 of 6 products in this snapshot.', hash);
+  }
+});
+
+test('a category needing encoding round-trips through the address', () => {
+  const rows = [product(1, { category: 'Ceiling Lights & Chandeliers' }), product(2, { category: 'Other' })];
+  const context = run(rows, '#page=1&category=Ceiling%20Lights%20%26%20Chandeliers');
+
+  assert.equal(context.elements.category.value, 'Ceiling Lights & Chandeliers');
+  assert.equal(context.elements.rows.children.length, 1);
+});
+
 test('control bars are hidden when everything fits on one page', () => {
   const { bars } = run([product(1), product(2)]);
 
@@ -391,5 +544,5 @@ test('an empty snapshot says so instead of drawing rows', () => {
 
   assert.equal(elements.rows.children.length, 0);
   assert.equal(elements.empty.hidden, false, 'the empty-state note is shown');
-  assert.equal(elements.count.textContent, 'No products on this page.');
+  assert.equal(elements.count.textContent, 'No products.');
 });

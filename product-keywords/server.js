@@ -97,15 +97,19 @@ const IMAGE_HOSTS = Object.freeze([
  * that host a viewer opened the page; referrer-policy: no-referrer keeps the
  * URL of this page out of it.
  *
- * form-action 'none' because there is no form - nothing here is ever
- * submitted, as the source database is read-only to this application.
+ * form-action 'self' for the category filter, which is an ordinary GET form
+ * pointing back at this application. It was 'none' while the page had no form
+ * at all; 'self' still refuses to let a form here submit anywhere else. The
+ * filter changes nothing - it selects which rows are read - and the source
+ * database remains read-only to this application, which is why a POST is still
+ * answered with the read-only explanation.
  */
 const SECURITY_HEADERS = Object.freeze({
   'content-security-policy':
     "default-src 'none'; " +
     "style-src 'unsafe-inline'; " +
     `img-src ${IMAGE_HOSTS.join(' ')}; ` +
-    "form-action 'none'; base-uri 'none'; frame-ancestors 'none'",
+    "form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'no-referrer',
 });

@@ -14,7 +14,7 @@ output is in `evidence/build-verification.md`.
 | 7 | Confirm no INSERT/UPDATE/DELETE SQL exists | **Pass** - asserted by `readonly.test.js` over every application module. |
 | 8 | Confirm no second database is used | **Pass** - asserted by `readonly.test.js`; no reference to `order_management_copy`, `listing_generator` or `amazon_competitors`. |
 | 9 | Confirm Inventory System is not modified | **Pass** - `git -C "../Inventory System" status` clean; no file written outside `Task 4`. |
-| 10 | Run available tests | **Pass** - 139 tests, 139 passing, 0 failing. |
+| 10 | Run available tests | **Pass** - 184 tests, 184 passing, 0 failing. |
 
 ## Keyword completion round
 
@@ -163,6 +163,64 @@ Two limitations recorded rather than hidden:
 The visual rendering was not opened in a browser; the checks above are
 structural and behavioural (the shipped script executed against a DOM
 stand-in).
+
+## Categories round
+
+A Category column and a category filter were added, taking the table from
+eight columns to nine.
+
+### The category source, as found
+
+| Source | Reaches products | Distinct values | Verdict |
+|---|---|---|---|
+| `listings.shopify_listings.product_type` (by SKU) | 19,343 (43.3%) | 595 | **Used.** The business's own recorded category; the join Smart Inventory Control already uses |
+| Derived from `inventory.products.title` | +1,899 (4.3%) | 28 | **Used as the fallback only**, from the map that already produces the Primary Keyword |
+| `staff.ph_categories` + `ph_category_products` | 4,457 (10.0%) | 77 | Not used. Reaches products only through a three-hop ASIN join and covers far less |
+| `listings.amazon_listings.product_type` | 8,834 (19.8%) | - | Not used. Narrower than the Shopify one |
+| `listings.bandq_categories`, `listings.shopify_collections`, `google_ads.merchant_products` | - | - | Not used. Other applications' data |
+
+Combined: **21,242 of 44,636 products (47.6%) carry a category, in 488 distinct
+values.** 23,394 have none and show a blank cell.
+
+The choice between "recorded only", "derived only" and the hybrid was put to
+the requester with these measurements before anything was built; the hybrid was
+chosen.
+
+| # | Check | Result |
+|---|---|---|
+| 66 | Category data retrieved from ledsone, not invented | **Pass** - `listings.shopify_listings.product_type`, one listing per SKU by `updated_at`; asserted against the source by test |
+| 67 | Relationship to inventory.products | **Pass** - `products.sku = coalesce(nullif(mapped_sku,''), sku)`, LEFT joined so an uncategorised product is kept; no product duplicated |
+| 68 | Recorded category always wins | **Pass** - derived only where ledsone records nothing; blank/whitespace counts as missing |
+| 69 | Recorded values are not edited | **Pass** - near-duplicates and other languages shown as stored (`Pendant_Lamp_Lights`, `Pendelleuchten`, `LIGHT_FIXTURE`) |
+| 70 | No other category table read, nothing written back | **Pass** - a test fails the build on `ph_categories`, `bandq_categories`, `shopify_collections` or `merchant_products`, or on any write statement |
+| 71 | Category shown in the table, 5th column | **Pass** - live headers: Product Image, SKU, Product ID, Product Name, **Category**, Primary, Secondary, Long-Tail, Competitor |
+| 72 | Missing category handled | **Pass** - `<td class="category"></td>`; no "Uncategorised", "Unknown", "N/A" or "None". Live page 500: 44 of 50 rows blank |
+| 73 | Filter shows available categories | **Pass** - 489 options live (All Categories plus 488), busiest first with counts: `Pendant Lighting (1,700)`, `Wall Light (1,215)`, `LIGHT_FIXTURE (897)` |
+| 74 | Selecting a category filters the table | **Pass** - `?category=Pendant Lighting` returns 50 rows, every one in that category |
+| 75 | Count updates to the filtered total | **Pass** - `Showing 1-50 of 1,700 products in Pendant Lighting.` against `44,641` unfiltered |
+| 76 | Pagination works after filtering | **Pass** - `Page 1 of 34` for 1,700 products at 50 a page; page 3 returns 50 rows, all still in the category |
+| 77 | Category preserved across pages | **Pass** - every paging link carries it: `/product-keywords?page=2&category=Pendant%20Lighting`, in both control bars |
+| 78 | All Categories shows everything | **Pass** - back to `44,641`; the Clear control is hidden when no filter is on and shown when one is |
+| 79 | Unknown category is not an error | **Pass** - `?category=NoSuchCategoryAtAll` returns HTTP 200 and the full catalogue |
+| 80 | Category values are escaped | **Pass** - a category of `<b>Lights</b> & "more"` renders escaped, in the cell, the option and the paging link |
+| 81 | Live page still needs no JavaScript | **Pass** - the filter is a GET form; zero `<script` in the served page |
+| 82 | Keyword generation unchanged | **Pass** - no change to `keyword-generator.js`; all its tests pass untouched |
+| 83 | Snapshot carries categories | **Pass** - `share/product-keywords-snapshot.html`: 9 headers, `category` on every embedded row, 63 categories in this 500-product file |
+| 84 | Snapshot category filter works | **Pass** - the file's own script was run against its own data: choosing `Lamp_Holder` gives `Showing 1-50 of 69 products in Lamp_Holder`, `Page 1 of 2`, every row matching; Next stays inside the category; Clear returns to `500` / `Page 1 of 10` |
+| 85 | Snapshot preserves the category while paging | **Pass** - the address becomes `#page=2&category=Lamp_Holder`, and `#page=2&category=Lights` opens filtered |
+| 86 | Snapshot still self-contained | **Pass** - zero external scripts, zero `<link>`, zero credential patterns, zero SQL statements |
+| 87 | Test suite | **Pass** - 184 tests, 184 passing, 0 failing |
+
+One security change: `Content-Security-Policy` `form-action` moved from
+`'none'` to `'self'` so the filter form can submit back to this application.
+It was `'none'` only because the page previously had no form; `'self'` still
+refuses to let a form here submit anywhere else, and a POST is still answered
+with the read-only explanation.
+
+A category index is held in memory (about 3.4s to build, ~17MB, rebuilt after
+10 minutes). It exists because a category derived from a product name cannot
+be filtered or counted in SQL, and paging a filtered list correctly needs the
+whole matching set. Nothing is written to the database.
 
 ## Does the page return real ledsone data?
 

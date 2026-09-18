@@ -64,24 +64,182 @@ test('number groups thousands for reading', () => {
   assert.equal(number(44599), '44,599');
 });
 
-/** The eight columns, in the order the requirement sets. */
+/** The nine columns, in the order the requirement sets. */
 const COLUMNS = [
   'Product Image',
   'SKU',
   'Product ID',
   'Product Name',
+  'Category',
   'Primary Keyword',
   'Secondary Keywords',
   'Long-Tail Keywords',
   'Competitor Keywords',
 ];
 
-test('the table contains exactly the eight requested columns, in the requested order', () => {
+/** Where the four keyword cells start, after image/sku/id/name/category. */
+const FIRST_KEYWORD_CELL = 5;
+
+test('the table contains exactly the nine requested columns, in the requested order', () => {
   const html = page();
   const headings = [...html.matchAll(/<th>(.*?)<\/th>/g)].map((match) => match[1]);
 
   assert.deepEqual(headings, COLUMNS);
   assert.equal(headings[0], 'Product Image', 'the image is the first column');
+  assert.equal(headings[4], 'Category', 'Category sits after Product Name');
+});
+
+// ---------------------------------------------------------------------------
+// The Category column and the category filter.
+// ---------------------------------------------------------------------------
+
+const CATEGORIES = [
+  { name: 'Pendant Lighting', count: 3374 },
+  { name: 'Wall Light', count: 1667 },
+  { name: 'Light Switch', count: 190 },
+];
+
+/** A page with a filter applied. */
+const filtered = (overrides = {}) =>
+  page({
+    products: [{ id: 3, sku: 'PL1', title: 'Vintage Pendant Light', category: 'Pendant Lighting' }],
+    categories: CATEGORIES,
+    category: 'Pendant Lighting',
+    total: 3374,
+    catalogueTotal: 44636,
+    page: 2,
+    pageCount: 68,
+    ...overrides,
+  });
+
+test("a product's category is shown in its own cell, after the product name", () => {
+  const html = page({
+    products: [{ id: 3, sku: 'PL1', title: 'Vintage Pendant Light', category: 'Pendant Lighting' }],
+  });
+  const row = /<tbody>[\s\S]*?<tr>([\s\S]*?)<\/tr>/.exec(html)?.[1] ?? '';
+  const cells = [...row.matchAll(/<td(?: [^>]*)?>([\s\S]*?)<\/td>/g)].map((match) => match[1]);
+
+  assert.equal(cells.length, 9);
+  assert.equal(cells[4], 'Pendant Lighting');
+  assert.ok(html.includes('<td class="category">Pendant Lighting</td>'));
+});
+
+test('a product with no category gets a blank cell, not a placeholder', () => {
+  for (const missing of [null, undefined, '']) {
+    const html = page({ products: [{ id: 5, sku: 'X', title: 'Combo Default Title.', category: missing }] });
+    const row = /<tbody>[\s\S]*?<tr>([\s\S]*?)<\/tr>/.exec(html)?.[1] ?? '';
+    const cells = [...row.matchAll(/<td(?: [^>]*)?>([\s\S]*?)<\/td>/g)].map((match) => match[1]);
+
+    assert.equal(cells.length, 9, String(missing));
+    assert.equal(cells[4], '', 'the category cell is genuinely empty');
+    assert.ok(html.includes('<td class="category"></td>'));
+    for (const placeholder of ['Uncategorised', 'Unknown', 'N/A', 'None']) {
+      assert.ok(!html.includes(placeholder), `${placeholder} must not appear`);
+    }
+  }
+});
+
+test('a category from the database is escaped before it reaches the page', () => {
+  const html = page({
+    products: [{ id: 1, sku: 'X', title: 'A product', category: '<b>Lights</b> & "more"' }],
+    categories: [{ name: '<b>Lights</b> & "more"', count: 1 }],
+    category: '<b>Lights</b> & "more"',
+  });
+
+  assert.ok(!html.includes('<b>Lights</b>'), 'a category must not inject markup');
+  assert.ok(html.includes('&lt;b&gt;Lights&lt;/b&gt; &amp; &quot;more&quot;'));
+});
+
+test('the filter offers All Categories first, with the catalogue total', () => {
+  const html = page({ categories: CATEGORIES, catalogueTotal: 44636 });
+  const options = [...html.matchAll(/<option value="([^"]*)"([^>]*)>([^<]*)<\/option>/g)];
+
+  assert.equal(options[0][1], '', 'All Categories is the empty value');
+  assert.equal(options[0][3], 'All Categories (44,636)');
+  assert.match(options[0][2], /selected/, 'and it is selected when nothing is filtered');
+});
+
+test('the filter lists every category, with its product count', () => {
+  const html = page({ categories: CATEGORIES, catalogueTotal: 44636 });
+  const options = [...html.matchAll(/<option value="([^"]*)"[^>]*>([^<]*)<\/option>/g)];
+
+  assert.equal(options.length, 4, 'All Categories plus the three given');
+  assert.equal(options[1][1], 'Pendant Lighting');
+  assert.equal(options[1][2], 'Pendant Lighting (3,374)');
+  assert.equal(options[3][2], 'Light Switch (190)');
+});
+
+test('the chosen category is the selected option', () => {
+  const html = filtered();
+  const selected = [...html.matchAll(/<option value="([^"]*)"[^>]*selected[^>]*>/g)].map((match) => match[1]);
+
+  assert.deepEqual(selected, ['Pendant Lighting'], 'exactly one option is selected');
+});
+
+test('the count line reports the filtered total, not the catalogue', () => {
+  assert.match(filtered(), /Showing 51&ndash;51 of 3,374 products in Pendant Lighting\./);
+});
+
+test('with no filter the count line names no category', () => {
+  const html = page({ total: 44636, categories: CATEGORIES });
+
+  assert.match(html, /of 44,636 products\./);
+  assert.ok(!html.includes(' products in '), 'no category is named');
+});
+
+test('the chosen category is carried on both paging links', () => {
+  const html = filtered();
+  const links = [...html.matchAll(/href="(\/product-keywords\?[^"]*)"/g)].map((match) => match[1]);
+
+  // Previous and Next, in each of the two control bars.
+  assert.deepEqual(links, [
+    '/product-keywords?page=1&amp;category=Pendant%20Lighting',
+    '/product-keywords?page=3&amp;category=Pendant%20Lighting',
+    '/product-keywords?page=1&amp;category=Pendant%20Lighting',
+    '/product-keywords?page=3&amp;category=Pendant%20Lighting',
+  ]);
+});
+
+test('a category needing encoding survives the paging link intact', () => {
+  const html = filtered({
+    category: 'Ceiling Lights & Chandeliers',
+    categories: [{ name: 'Ceiling Lights & Chandeliers', count: 1127 }],
+  });
+
+  assert.ok(html.includes('category=Ceiling%20Lights%20%26%20Chandeliers'));
+  assert.ok(!html.includes('category=Ceiling Lights & Chandeliers'), 'the raw value is not put in a URL');
+});
+
+test('paging links carry no category when nothing is filtered', () => {
+  const html = page({ page: 2, pageCount: 4, total: 200, categories: CATEGORIES });
+  const links = [...html.matchAll(/href="(\/product-keywords\?[^"]*)"/g)].map((match) => match[1]);
+
+  assert.deepEqual(links, [
+    '/product-keywords?page=1',
+    '/product-keywords?page=3',
+    '/product-keywords?page=1',
+    '/product-keywords?page=3',
+  ]);
+});
+
+test('the Clear control is shown only while a category is chosen', () => {
+  assert.ok(filtered().includes('<a class="btn" href="/product-keywords">Clear</a>'));
+  assert.ok(page({ categories: CATEGORIES }).includes('<a class="btn" href="/product-keywords" hidden>Clear</a>'));
+});
+
+test('an empty filtered result says which category is empty', () => {
+  const html = filtered({ products: [], total: 0, pageCount: 1 });
+
+  assert.match(html, /No products found in Pendant Lighting\./);
+});
+
+test('the filter is a plain GET form back to this application', () => {
+  const html = page({ categories: CATEGORIES });
+
+  assert.match(html, /<form class="filter" method="get" action="\/product-keywords">/);
+  assert.match(html, /<select name="category" id="category">/);
+  assert.match(html, /<button type="submit" class="btn">Filter<\/button>/);
+  assert.ok(!html.includes('<script'), 'the filter needs no JavaScript');
 });
 
 test('the old unclassified keyword column is absent', () => {
@@ -95,8 +253,8 @@ test('unavailable keyword categories render as four actual blank table cells', (
   const row = /<tbody>[\s\S]*?<tr>([\s\S]*?)<\/tr>/.exec(html)?.[1] ?? '';
   const cells = [...row.matchAll(/<td(?: [^>]*)?>(.*?)<\/td>/g)].map((match) => match[1]);
 
-  assert.equal(cells.length, 8);
-  assert.deepEqual(cells.slice(4), ['', '', '', '']);
+  assert.equal(cells.length, 9);
+  assert.deepEqual(cells.slice(FIRST_KEYWORD_CELL), ['', '', '', '']);
   assert.ok(!html.includes('Not recorded'));
 });
 
@@ -113,7 +271,7 @@ test('generated keyword categories render in their existing four cells', () => {
 
   const row = /<tbody>[\s\S]*?<tr>([\s\S]*?)<\/tr>/.exec(html)?.[1] ?? '';
   const cells = [...row.matchAll(/<td(?: [^>]*)?>(.*?)<\/td>/g)].map((match) => match[1]);
-  assert.deepEqual(cells.slice(4), ['Pendant Light', 'Hanging Light', 'Pendant Ceiling Light', 'Ceiling Pendant']);
+  assert.deepEqual(cells.slice(FIRST_KEYWORD_CELL), ['Pendant Light', 'Hanging Light', 'Pendant Ceiling Light', 'Ceiling Pendant']);
 });
 
 test('the page never places a keyword classification claim in a table cell', () => {
@@ -251,7 +409,11 @@ test('page.html marks where dynamic data is inserted, with comments', () => {
 });
 
 test('page.html holds no credentials, queries or secrets', () => {
-  assert.doesNotMatch(TEMPLATE, /\bSELECT\b|\bFROM\s+inventory\b/i, 'no SQL belongs in the UI file');
+  // A SQL SHAPE, not the bare word: the filter markup contains a <select>
+  // element, which is not a query.
+  assert.doesNotMatch(TEMPLATE, /\bSELECT\s+[\w*".]+[\s\S]{0,80}?\bFROM\b/i, 'no SQL belongs in the UI file');
+  assert.doesNotMatch(TEMPLATE, /\bFROM\s+inventory\./i);
+  assert.doesNotMatch(TEMPLATE, /\bLEFT JOIN\b|\bWHERE\s+\w+\s*=/i);
   assert.doesNotMatch(TEMPLATE, /DB_PASSWORD|DB_USER|DB_HOST|password/i);
 });
 
@@ -429,6 +591,7 @@ test('a fully generated row fills all four keyword cells', () => {
         sku: 'SWRS1GBM',
         title: 'Screwless Wall light switches Black 1 Gang',
         image: 'https://sin1.contabostorage.com/img/product_images/117.jpg',
+        category: 'Light Switch',
       },
     ],
     classify: () => ({
@@ -442,7 +605,7 @@ test('a fully generated row fills all four keyword cells', () => {
   const row = /<tbody>[\s\S]*?<tr>([\s\S]*?)<\/tr>/.exec(html)?.[1] ?? '';
   const cells = [...row.matchAll(/<td(?: [^>]*)?>([\s\S]*?)<\/td>/g)].map((match) => match[1]);
 
-  assert.equal(cells.length, 8, 'eight columns, no extra keyword column');
+  assert.equal(cells.length, 9, 'nine columns, no extra keyword column');
   assert.ok(
     cells.every((cell) => cell !== ''),
     'every cell in a fully populated row has a value',
@@ -468,7 +631,7 @@ test('a product with an image renders an img in the first cell', () => {
   const html = withImage('https://sin1.contabostorage.com/img/product_images/1.jpg');
   const cells = firstRowCells(html);
 
-  assert.equal(cells.length, 8);
+  assert.equal(cells.length, 9);
   assert.match(cells[0], /^<img /, 'the image is the first cell');
   assert.ok(html.includes('src="https://sin1.contabostorage.com/img/product_images/1.jpg"'));
   assert.ok(html.includes('<td class="img"><img '));
@@ -495,7 +658,7 @@ test('a product with no image gets a blank cell, not a placeholder', () => {
     const cells = firstRowCells(withImage(missing));
     const html = withImage(missing);
 
-    assert.equal(cells.length, 8, `still eight cells for ${JSON.stringify(missing)}`);
+    assert.equal(cells.length, 9, `still nine cells for ${JSON.stringify(missing)}`);
     assert.equal(cells[0], '', 'the image cell is genuinely empty');
     assert.ok(!html.includes('<img'), 'no image element is invented');
     assert.ok(html.includes('<td class="img"></td>'));
@@ -505,7 +668,7 @@ test('a product with no image gets a blank cell, not a placeholder', () => {
 test('a product row with no image field at all still renders', () => {
   const cells = firstRowCells(page({ products: [{ id: 5, sku: 'X', title: 'A product' }] }));
 
-  assert.equal(cells.length, 8);
+  assert.equal(cells.length, 9);
   assert.equal(cells[0], '');
 });
 
@@ -556,7 +719,7 @@ test('the image column does not disturb the keyword columns', () => {
     }),
   });
 
-  assert.deepEqual(firstRowCells(html).slice(4), [
+  assert.deepEqual(firstRowCells(html).slice(FIRST_KEYWORD_CELL), [
     'Pendant Light',
     'Hanging Light',
     'Pendant Ceiling Light',

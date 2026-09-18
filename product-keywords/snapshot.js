@@ -175,11 +175,36 @@ export function toSnapshotRow(product) {
     sku: product.sku ?? '',
     id: String(product.id ?? ''),
     name: product.title ?? '',
+    // ledsone's own category, else one derived from the product name, else
+    // null for a blank cell. Resolved by source.js; see categories.js.
+    category: typeof product.category === 'string' && product.category.trim() !== '' ? product.category.trim() : null,
     primary: keywords.primary,
     secondary: keywords.secondary,
     longTail: keywords.longTail,
     competitor: keywords.competitor,
   };
+}
+
+/**
+ * The categories present in a set of snapshot rows, busiest first.
+ *
+ * Built from the rows the file actually carries rather than from the whole
+ * catalogue, so every option in the filter matches something in this file.
+ *
+ * @param {Array<{category: string|null}>} rows
+ * @returns {Array<{name: string, count: number}>}
+ */
+export function categoriesIn(rows) {
+  const counts = new Map();
+
+  for (const row of rows) {
+    if (typeof row.category !== 'string' || row.category === '') continue;
+    counts.set(row.category, (counts.get(row.category) ?? 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'en'));
 }
 
 /**
@@ -203,12 +228,15 @@ function clientScript(pageSize) {
 
 var PAGE_SIZE = ${Number(pageSize)};
 var ROWS = JSON.parse(document.getElementById('snapshot-data').textContent);
-var PAGE_COUNT = Math.max(1, Math.ceil(ROWS.length / PAGE_SIZE));
 var current = 1;
+var category = '';        /* '' means All Categories */
+var visible = ROWS;       /* the rows the filter leaves */
+var PAGE_COUNT = 1;
 
 var tbody = document.getElementById('rows');
 var countLine = document.getElementById('count');
 var empty = document.getElementById('empty');
+var picker = document.getElementById('category');
 
 /* Only a real web address may become an image source. A data:, javascript: or
    relative value is treated as no image, exactly as the live page does. */
@@ -244,7 +272,7 @@ function imageCell(row) {
 
 function drawRows(page) {
   var first = (page - 1) * PAGE_SIZE;
-  var slice = ROWS.slice(first, first + PAGE_SIZE);
+  var slice = visible.slice(first, first + PAGE_SIZE);
 
   tbody.textContent = '';
   var fragment = document.createDocumentFragment();
@@ -255,6 +283,7 @@ function drawRows(page) {
     tr.appendChild(cell(row.sku, 'sku'));
     tr.appendChild(cell(row.id, 'num'));
     tr.appendChild(cell(row.name, 'name'));
+    tr.appendChild(cell(row.category, 'category'));
     tr.appendChild(cell(row.primary));
     tr.appendChild(cell(row.secondary));
     tr.appendChild(cell(row.longTail));
@@ -265,11 +294,13 @@ function drawRows(page) {
   tbody.appendChild(fragment);
   empty.hidden = slice.length > 0;
 
+  var where = category === '' ? '' : ' in ' + category;
+
   countLine.textContent = slice.length === 0
-    ? 'No products on this page.'
+    ? 'No products' + where + '.'
     : 'Showing ' + (first + 1).toLocaleString('en-GB') + '\\u2013' +
       (first + slice.length).toLocaleString('en-GB') + ' of ' +
-      ROWS.length.toLocaleString('en-GB') + ' products in this snapshot.';
+      visible.length.toLocaleString('en-GB') + ' products' + where + ' in this snapshot.';
 }
 
 function drawControls(page) {
@@ -291,13 +322,30 @@ function drawControls(page) {
   });
 }
 
+/* Apply the chosen category. Paging always restarts at page 1, because page 7
+   of everything is not page 7 of one category. */
+function filterTo(next, page) {
+  category = typeof next === 'string' ? next : '';
+
+  visible = category === ''
+    ? ROWS
+    : ROWS.filter(function (row) { return row.category === category; });
+
+  PAGE_COUNT = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+  if (picker && picker.value !== category) picker.value = category;
+
+  show(page || 1);
+}
+
 function show(page) {
   current = Math.min(Math.max(1, page), PAGE_COUNT);
   drawRows(current);
   drawControls(current);
-  /* Keep the address bar in step so a page can be linked to or reloaded. */
+  /* Keep the address bar in step so a page can be linked to or reloaded, and
+     so the chosen category survives a reload. */
   if (window.history && window.history.replaceState) {
-    window.history.replaceState(null, '', '#page=' + current);
+    window.history.replaceState(null, '', '#page=' + current +
+      (category === '' ? '' : '&category=' + encodeURIComponent(category)));
   }
 }
 
@@ -319,8 +367,36 @@ document.addEventListener('keydown', function (event) {
   if (event.key === 'ArrowRight') show(current + 1);
 });
 
-var requested = parseInt((window.location.hash.match(/page=(\\d+)/) || [])[1], 10);
-show(Number.isFinite(requested) ? requested : 1);
+if (picker) {
+  picker.addEventListener('change', function () {
+    filterTo(picker.value, 1);
+    window.scrollTo(0, 0);
+  });
+}
+
+var clear = document.getElementById('clear-filter');
+if (clear) {
+  clear.addEventListener('click', function () {
+    filterTo('', 1);
+    window.scrollTo(0, 0);
+  });
+}
+
+/* Open on whatever the address asks for, so a filtered page can be linked to. */
+var hash = window.location.hash || '';
+var wantedPage = parseInt((hash.match(/page=(\\d+)/) || [])[1], 10);
+var wantedCategory = (hash.match(/category=([^&]*)/) || [])[1];
+
+try {
+  wantedCategory = wantedCategory ? decodeURIComponent(wantedCategory) : '';
+} catch (error) {
+  wantedCategory = '';
+}
+
+/* A category the file does not hold is treated as no filter, not an error. */
+var known = ROWS.some(function (row) { return row.category === wantedCategory; });
+
+filterTo(known ? wantedCategory : '', Number.isFinite(wantedPage) ? wantedPage : 1);
 `.trim();
 }
 
@@ -330,6 +406,7 @@ export const COLUMNS = Object.freeze([
   'SKU',
   'Product ID',
   'Product Name',
+  'Category',
   'Primary Keyword',
   'Secondary Keywords',
   'Long-Tail Keywords',
@@ -364,7 +441,19 @@ export function buildSnapshotHtml({
 
   const withImage = rows.filter((row) => typeof row.image === 'string' && row.image !== '').length;
 
+  const categories = categoriesIn(rows);
+  const withCategory = categories.reduce((sum, { count }) => sum + count, 0);
+
   const headers = COLUMNS.map((name) => `            <th>${escapeHtml(name)}</th>`).join('\n');
+
+  // "All Categories" is the empty value, which the script reads as no filter.
+  const options = [
+    `<option value="">All Categories (${rows.length.toLocaleString('en-GB')})</option>`,
+    ...categories.map(
+      ({ name, count }) =>
+        `<option value="${escapeHtml(name)}">${escapeHtml(name)} (${count.toLocaleString('en-GB')})</option>`,
+    ),
+  ].join('');
 
   const controls = (place) => `    <div class="controls controls-${place}" hidden>
       <nav class="pager" aria-label="Pagination ${place}">
@@ -413,6 +502,12 @@ export function buildSnapshotHtml({
   Product rows: ${rows.length.toLocaleString('en-GB')} of ${catalogueTotal.toLocaleString('en-GB')} in the catalogue.
   With an image: ${withImage.toLocaleString('en-GB')}. Without: ${(rows.length - withImage).toLocaleString('en-GB')} - those cells
   are deliberately blank; no placeholder picture is ever substituted.
+
+  Categories: ${categories.length.toLocaleString('en-GB')} across ${withCategory.toLocaleString('en-GB')} of these products;
+  ${(rows.length - withCategory).toLocaleString('en-GB')} have none and show a blank Category cell. A category is
+  ledsone's own recorded one where it has one, otherwise the product type the
+  product name itself states. The filter above the table works entirely inside
+  this file.
 -->
 <style>
 ${styles}
@@ -421,6 +516,7 @@ ${styles}
    links, because there is no server to answer a link. */
 button.btn { font: inherit; cursor: pointer; }
 button.btn:disabled { color: var(--muted); opacity: .55; cursor: default; border-color: var(--line); }
+.filter button.btn { padding: 5px 12px; }
 .controls[hidden], [hidden] { display: none !important; }
 .snapshot-note { color: var(--muted); font-size: 12px; margin: 0 0 14px; max-width: 90ch; }
 .snapshot-note code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -440,8 +536,19 @@ button.btn:disabled { color: var(--muted); opacity: .55; cursor: default; border
       connection and no credentials. Rebuild with <code>npm run snapshot</code>.
     </p>
 
+    <!-- ================= CATEGORY FILTER =================
+         Filters the embedded rows in the browser. There is no server here, so
+         choosing a category re-draws the table from the data already in this
+         file. Counts are for this snapshot, not the whole catalogue. -->
+    <div class="filter">
+      <label for="category">Categories</label>
+      <select id="category">${options}</select>
+      <button type="button" class="btn" id="clear-filter">Clear</button>
+    </div>
+
     <!-- ================= COUNT AREA =================
-         Filled by the inline script from the embedded data. -->
+         Filled by the inline script from the embedded data. It reports the
+         count for the chosen category. -->
     <p class="count" id="count"></p>
 
 ${controls('top')}

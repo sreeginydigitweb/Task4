@@ -31,6 +31,7 @@ const ROWS = [
     sku: 'HLBP128BB',
     id: '1',
     name: 'Brass Pull and Push Door Handle',
+    category: 'Door Handle',
     primary: 'Door Handle',
     secondary: 'Door Pull, Pull Handle, Brass',
     longTail: 'Brass Door Handle',
@@ -41,6 +42,7 @@ const ROWS = [
     sku: 'SOGS1GGK',
     id: '390',
     name: 'Decorative Black Glossy Main Plug One Gang Switch',
+    category: null,
     primary: 'Light Switch',
     secondary: 'Wall Switch, Switch Plate, Black',
     longTail: 'Black Light Switch',
@@ -121,6 +123,7 @@ test('the snapshot has all eight headers, in the required order', () => {
     'SKU',
     'Product ID',
     'Product Name',
+    'Category',
     'Primary Keyword',
     'Secondary Keywords',
     'Long-Tail Keywords',
@@ -149,7 +152,8 @@ test('pagination controls are in the file, above and below the table', () => {
   for (const id of ['prev-top', 'next-top', 'position-top', 'prev-bottom', 'next-bottom', 'position-bottom']) {
     assert.ok(html.includes(`id="${id}"`), `${id} is present`);
   }
-  assert.equal((html.match(/<button type="button" class="btn"/g) ?? []).length, 4);
+  // Four paging buttons, plus the filter's Clear.
+  assert.equal((html.match(/<button type="button" class="btn"/g) ?? []).length, 5);
 });
 
 // ---------------------------------------------------------------------------
@@ -170,6 +174,7 @@ test('real product data is embedded in the file', () => {
 test('every row carries all eight column values', () => {
   for (const row of embeddedData(snapshot())) {
     assert.deepEqual(Object.keys(row).sort(), [
+      'category',
       'competitor',
       'id',
       'image',
@@ -231,7 +236,8 @@ test('the snapshot contains no database credentials or connection details', () =
 test('the snapshot contains no SQL and no database client code', () => {
   const html = snapshot();
 
-  assert.doesNotMatch(html, /\bSELECT\b\s+[a-z*]/i, 'no SQL statement');
+  // A SQL SHAPE, not the bare word: the filter markup contains a <select>.
+  assert.doesNotMatch(html, /\bSELECT\s+[\w*".]+[\s\S]{0,80}?\bFROM\b/i, 'no SQL statement');
   assert.doesNotMatch(html, /\bFROM\s+inventory\./i);
   assert.doesNotMatch(html, /\bLEFT JOIN\b/i);
   assert.doesNotMatch(html, /\bnew\s+(pg\.)?(Pool|Client)\b/, 'no database client is constructed');

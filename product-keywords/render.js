@@ -216,6 +216,23 @@ function imageCell(url, productName) {
 }
 
 /**
+ * The address of one page of the list, carrying the chosen category.
+ *
+ * This is the whole of how a filter survives paging: every paging link repeats
+ * the category, so Next from page 3 of "Wall Light" lands on page 4 of "Wall
+ * Light" rather than page 4 of everything. The category is a database value,
+ * so it is percent-encoded here and escaped again when it reaches the page.
+ *
+ * @param {number} page
+ * @param {string} category  Empty for no filter.
+ * @returns {string}
+ */
+function pageHref(page, category) {
+  const query = `page=${Math.trunc(page)}`;
+  return category === '' ? `/product-keywords?${query}` : `/product-keywords?${query}&category=${encodeURIComponent(category)}`;
+}
+
+/**
  * The attributes one paging button carries.
  *
  * The button itself - its tag, its class, its label - is written out in
@@ -224,17 +241,39 @@ function imageCell(url, productName) {
  * button therefore has no href at all, which is why `page=0` never appears in
  * the markup and why the browser will not follow it.
  *
- * The value is interpolated as markup rather than text, so it is built only
- * from a whole number and fixed strings - never from database data.
- *
  * @param {number|null} target  The page to link to, or null for disabled.
  * @param {'prev'|'next'} rel
+ * @param {string} category
  * @returns {string}
  */
-function buttonAttributes(target, rel) {
+function buttonAttributes(target, rel, category) {
   return target === null
     ? 'aria-disabled="true"'
-    : `href="/product-keywords?page=${Math.trunc(target)}" rel="${rel}"`;
+    : `href="${escapeHtml(pageHref(target, category))}" rel="${rel}"`;
+}
+
+/**
+ * The option list for the Categories filter.
+ *
+ * "All Categories" is the empty value, which the router reads as no filter.
+ * Every category name is a database value and is escaped, in the attribute and
+ * in the text. Counts are shown so the list can be judged at a glance - the
+ * catalogue has hundreds of marketplace categories and most cover few
+ * products.
+ *
+ * @param {Array<{name: string, count: number}>} categories
+ * @param {string} selected
+ * @param {number} total  Products in the whole catalogue.
+ * @returns {string}
+ */
+function categoryOptions(categories, selected, total) {
+  const option = (value, label, isSelected) =>
+    `<option value="${escapeHtml(value)}"${isSelected ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+
+  return [
+    option('', `All Categories (${number(total)})`, selected === ''),
+    ...categories.map(({ name, count }) => option(name, `${name} (${number(count)})`, name === selected)),
+  ].join('');
 }
 
 /**
@@ -270,10 +309,14 @@ export function renderProductKeywordsPage({
   pageCount,
   pageSize,
   classify,
+  categories = [],
+  category = '',
+  catalogueTotal = total,
 }) {
   const rows = products
     .map((product) => {
-      const category = classify(product);
+      const keywords = classify(product);
+      const productCategory = product.category ?? null;
 
       return (
         '          <tr>' +
@@ -281,20 +324,27 @@ export function renderProductKeywordsPage({
         `<td class="sku">${escapeHtml(product.sku)}</td>` +
         `<td class="num">${escapeHtml(product.id)}</td>` +
         `<td class="name">${escapeHtml(product.title)}</td>` +
-        categoryCell(category.primary) +
-        categoryCell(category.secondary) +
-        categoryCell(category.longTail) +
-        categoryCell(category.competitor) +
+        (productCategory === null || productCategory === ''
+          ? '<td class="category"></td>'
+          : `<td class="category">${escapeHtml(productCategory)}</td>`) +
+        categoryCell(keywords.primary) +
+        categoryCell(keywords.secondary) +
+        categoryCell(keywords.longTail) +
+        categoryCell(keywords.competitor) +
         '</tr>'
       );
     })
     .join('\n');
 
   const first = products.length === 0 ? 0 : (page - 1) * pageSize + 1;
+
+  // The category is a database value, and count_text is inserted as markup, so
+  // it is escaped here - once, for both wordings.
+  const inCategory = category === '' ? '' : ` in ${escapeHtml(category)}`;
   const countText =
     products.length === 0
-      ? 'No products on this page.'
-      : `Showing ${number(first)}&ndash;${number(first + products.length - 1)} of ${number(total)} products.`;
+      ? `No products${inCategory}.`
+      : `Showing ${number(first)}&ndash;${number(first + products.length - 1)} of ${number(total)} products${inCategory}.`;
 
   // One page of results has nowhere to page to, so page.html hides both bars
   // rather than showing two buttons that cannot be used.
@@ -303,11 +353,16 @@ export function renderProductKeywordsPage({
   return fillTemplate({
     count_text: countText,
     page_position: `Page ${number(page)} of ${number(pageCount)}`,
-    prev_attrs: buttonAttributes(page > 1 ? page - 1 : null, 'prev'),
-    next_attrs: buttonAttributes(page < pageCount ? page + 1 : null, 'next'),
+    prev_attrs: buttonAttributes(page > 1 ? page - 1 : null, 'prev', category),
+    next_attrs: buttonAttributes(page < pageCount ? page + 1 : null, 'next', category),
     controls_hidden: single ? ' hidden' : '',
     rows,
-    empty_message: rows === '' ? '    <p class="empty">No products found.</p>' : '',
+    // inCategory is already escaped; the fixed words around it need none.
+    empty_message: rows === '' ? `    <p class="empty">No products found${inCategory}.</p>` : '',
+    category_options: categoryOptions(categories, category, catalogueTotal),
+    // The Clear link is written out in page.html; it is only shown while a
+    // filter is on, so the control does not sit there doing nothing.
+    clear_hidden: category === '' ? ' hidden' : '',
   });
 }
 

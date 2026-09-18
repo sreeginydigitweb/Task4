@@ -23,7 +23,8 @@
  * confirmed product fields and leaves the four unavailable categories blank.
  */
 
-import { INVENTORY_SCHEMA, firstRow, rows } from './db.js';
+import { ALL_CATEGORIES, categoryFor, countInCategory, pageOfCategory } from './categories.js';
+import { INVENTORY_SCHEMA, LISTINGS_SCHEMA, firstRow, rows } from './db.js';
 import { resolveKeywordCategories } from './keyword-generator.js';
 
 /**
@@ -62,7 +63,13 @@ export function classifyKeywords(title, recorded = {}) {
  *
  * @returns {Promise<number>}
  */
-export async function countProducts() {
+export async function countProducts({ category = ALL_CATEGORIES } = {}) {
+  if (category !== ALL_CATEGORIES) {
+    // A filtered count comes from the category index, because a category
+    // derived from a product name cannot be counted in SQL.
+    return countInCategory(category);
+  }
+
   const row = await firstRow(`SELECT count(*)::int AS total FROM ${INVENTORY_SCHEMA}.products`);
   return row?.total ?? 0;
 }
@@ -96,21 +103,61 @@ export async function countProducts() {
  * The page is narrowed FIRST, in the `page` CTE, so the image lookups run
  * against the 50 rows being shown rather than the whole catalogue.
  *
+ * ---------------------------------------------------------------------------
+ * THE CATEGORY
+ *
+ * ledsone's own category is `listings.shopify_listings.product_type`, joined
+ * by SKU - one listing per SKU, the most recently updated. It is read here for
+ * the rows being shown; where it is absent, categories.js derives one from the
+ * product name. See categories.js for why that order.
+ *
+ * ---------------------------------------------------------------------------
+ * FILTERING
+ *
+ * With a category chosen, the ids for the page come from the category index
+ * rather than from LIMIT/OFFSET - a category derived from a product name
+ * cannot be filtered in SQL. The row query is otherwise identical, so a
+ * filtered page and an unfiltered one are built the same way.
+ *
  * @param {object} [options]
  * @param {number} [options.page]      1-based page number.
  * @param {number} [options.pageSize]
- * @returns {Promise<Array<{id: number, sku: string, title: string, image: string|null}>>}
+ * @param {string} [options.category]  ALL_CATEGORIES for the whole catalogue.
+ * @returns {Promise<Array<{id: number, sku: string, title: string, image: string|null, category: string|null}>>}
  */
-export async function findProductKeywordPage({ page = 1, pageSize = PAGE_SIZE } = {}) {
+export async function findProductKeywordPage({
+  page = 1,
+  pageSize = PAGE_SIZE,
+  category = ALL_CATEGORIES,
+} = {}) {
   const limit = Math.max(1, Math.trunc(pageSize));
   const offset = (Math.max(1, Math.trunc(page)) - 1) * limit;
 
+  // With a filter, the page is a list of ids; without one, it is a slice of
+  // the catalogue in id order. Both reach the same row query below.
+  const filteredIds = category === ALL_CATEGORIES ? null : await pageOfCategory(category, { page, pageSize: limit });
+
   const found = await rows(
     `WITH page AS (
-       SELECT id, sku, title
+       ${
+         filteredIds === null
+           ? `SELECT id, sku, title
        FROM ${INVENTORY_SCHEMA}.products
        ORDER BY id
-       LIMIT $1 OFFSET $2
+       LIMIT $1 OFFSET $2`
+           : `SELECT id, sku, title
+       FROM ${INVENTORY_SCHEMA}.products
+       WHERE id = ANY($1)
+       ORDER BY id`
+       }
+     ),
+     shopify_category AS (
+       SELECT DISTINCT ON (coalesce(nullif(l.mapped_sku, ''), l.sku))
+              coalesce(nullif(l.mapped_sku, ''), l.sku) AS sku,
+              l.product_type
+       FROM ${LISTINGS_SCHEMA}.shopify_listings l
+       WHERE coalesce(l.product_type, '') <> ''
+       ORDER BY 1, l.updated_at DESC NULLS LAST, l.id DESC
      ),
      main_media AS (
        SELECT DISTINCT ON (m.product_id) m.product_id, m.image_url
@@ -125,12 +172,14 @@ export async function findProductKeywordPage({ page = 1, pageSize = PAGE_SIZE } 
        ORDER BY i.product_id, i.image_ordering NULLS LAST, i.id
      )
      SELECT p.id, p.sku, p.title,
-            coalesce(mm.image_url, fi.image_url) AS image_url
+            coalesce(mm.image_url, fi.image_url) AS image_url,
+            sc.product_type
      FROM page p
+     LEFT JOIN shopify_category sc ON sc.sku = p.sku
      LEFT JOIN main_media  mm ON mm.product_id = p.id
      LEFT JOIN first_image fi ON fi.product_id = p.id
      ORDER BY p.id`,
-    [limit, offset],
+    filteredIds === null ? [limit, offset] : [filteredIds],
   );
 
   return found.map((row) => ({
@@ -140,5 +189,8 @@ export async function findProductKeywordPage({ page = 1, pageSize = PAGE_SIZE } 
     // Null when neither table holds one. The view shows a blank cell; it never
     // substitutes a placeholder image.
     image: row.image_url ?? null,
+    // ledsone's recorded category, else one derived from the product name,
+    // else null for a blank cell.
+    category: categoryFor(row.title, row.product_type),
   }));
 }

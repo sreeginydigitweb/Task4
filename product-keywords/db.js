@@ -126,6 +126,13 @@ function schemaName(name, fallback) {
 export const INVENTORY_SCHEMA = schemaName('DB_INVENTORY_SCHEMA', 'inventory');
 
 /**
+ * Marketplace listings: read for one field only, `shopify_listings.product_type`,
+ * which is ledsone's own recorded product category. Nothing else in this schema
+ * is touched.
+ */
+export const LISTINGS_SCHEMA = schemaName('DB_LISTINGS_SCHEMA', 'listings');
+
+/**
  * Build the pool configuration, complaining clearly about anything missing.
  *
  * @returns {object}

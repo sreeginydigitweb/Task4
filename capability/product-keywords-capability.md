@@ -16,6 +16,9 @@ What this application can and cannot do, as built.
 - Fill the four keyword columns for any product whose name carries recognised
   product terminology - measured at 72-75% of the first 5,000 products for the
   three generated categories, and 100% for Primary.
+- Show each product's category - ledsone's own `shopify_listings.product_type`
+  where it has one, otherwise the product type the Product Name states - and
+  filter the table by it, with the choice preserved while paging.
 - Page through the catalogue 50 products at a time, at roughly half a second
   per page regardless of how deep the page is, with the same control bar above
   and below the table.
@@ -25,6 +28,10 @@ What this application can and cannot do, as built.
 
 ## Cannot
 
+- **Invent, merge or translate a category.** Recorded categories are shown
+  exactly as the business stores them, near-duplicates and other languages
+  included. A product with no category gets a blank cell. No category table is
+  created and no category is written back.
 - **Invent product facts or competitor brands.** The fallback uses only title
   text and generic product-type terminology. It does not name companies or add
   unsupported specifications; a category remains blank when it cannot form a
