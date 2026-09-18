@@ -14,7 +14,7 @@ output is in `evidence/build-verification.md`.
 | 7 | Confirm no INSERT/UPDATE/DELETE SQL exists | **Pass** - asserted by `readonly.test.js` over every application module. |
 | 8 | Confirm no second database is used | **Pass** - asserted by `readonly.test.js`; no reference to `order_management_copy`, `listing_generator` or `amazon_competitors`. |
 | 9 | Confirm Inventory System is not modified | **Pass** - `git -C "../Inventory System" status` clean; no file written outside `Task 4`. |
-| 10 | Run available tests | **Pass** - 184 tests, 184 passing, 0 failing. |
+| 10 | Run available tests | **Pass** - 221 tests, 221 passing, 0 failing. |
 
 ## Keyword completion round
 
@@ -167,7 +167,8 @@ stand-in).
 ## Categories round
 
 A Category column and a category filter were added, taking the table from
-eight columns to nine.
+eight columns to nine. A Tags column was added after it, taking it to ten -
+see **Product Tags round** below.
 
 ### The category source, as found
 
@@ -222,6 +223,40 @@ A category index is held in memory (about 3.4s to build, ~17MB, rebuilt after
 be filtered or counted in SQL, and paging a filtered list correctly needs the
 whole matching set. Nothing is written to the database.
 
+## Keyword source tags round
+
+Each keyword now carries a small tag saying where it came from.
+
+**Three things in the request did not match the project as it stood, and were
+reported rather than quietly worked around:**
+
+- There was **no sidebar** to remove - the page has never had one.
+- There were **no coloured keyword chips or backgrounds** to correct. The tags
+  are a new feature, not a revision.
+- The page title was `Product Keywords - Task 4`; it is now exactly
+  `Product Keywords`, on both the live page and the snapshot.
+
+| # | Check | Result |
+|---|---|---|
+| 88 | Keyword text is ordinary dark text | **Pass** - `.kw { color: var(--ink) }`, no background, no border, no chip class. Asserted against the stylesheet and the rendered cell |
+| 89 | Only the tag is coloured | **Pass** - the only source-coloured rules are `.tag-db`, `.tag-gen`, `.tag-mix`; `.tag` sets `background: none` |
+| 90 | DB blue, GEN orange, MIX purple | **Pass** - `--tag-db: #1b5e9c`, `--tag-gen: #a35400`, `--tag-mix: #6b3fa0`, with lighter equivalents in dark mode |
+| 91 | The tag is small and beside its keyword | **Pass** - 10px, inline after the keyword, inside the same `.kw` line |
+| 92 | No separate tag column | **Pass** - still exactly nine headers and nine cells per row |
+| 93 | The four keyword columns are unchanged | **Pass** - Primary, Secondary, Long-Tail, Competitor all still present and in order |
+| 94 | Keyword values and generation unchanged | **Pass** - `keywordTermSources` reports on what `resolveKeywordCategories` already returns; no generation rule was touched, and every pre-existing keyword test passes unaltered |
+| 95 | All three tag states work | **Pass** - with a recorded value that partly agrees with the generator: `Hanging Light` -> MIX, `Ceiling Drop` -> DB, `Pendant Lamp` -> MIX; with none recorded, all GEN |
+| 96 | Tags on the live page | **Pass** - 389 tags on page 1, all GEN, because ledsone records no keyword category |
+| 97 | Keyword values are escaped, tag and all | **Pass** - a keyword of `<b>Lamp</b> & "co"` renders escaped |
+| 98 | An unknown source does not break the page | **Pass** - falls back to GEN rather than emitting `tag-nonsense` |
+| 99 | Blank keyword cell shows no tag | **Pass** |
+| 100 | Page title is exactly "Product Keywords" | **Pass** - live page and snapshot |
+| 101 | No sidebar | **Pass** - confirmed absent; the only `drawer`/`aside`-like matches on the page are inside product titles |
+| 102 | Categories, filter, image, pagination kept | **Pass** - 9 columns, 489 live filter options, filtering and paging re-verified |
+| 103 | Snapshot carries the tags | **Pass** - 389 tags on its page 1, rendered by its own script through `createTextNode` + a `.tag` span, so keyword text is never parsed as markup |
+| 104 | Snapshot still standalone | **Pass** - 0.31 MB, zero external scripts, zero `<link>`, zero credential patterns, zero SQL; filter and paging still work inside the file |
+| 105 | Test suite | **Pass** - 201 tests, 201 passing, 0 failing |
+
 ## Does the page return real ledsone data?
 
 Yes. The count line reads **44,599 products**, which is the true row count of
@@ -252,10 +287,129 @@ Three tests enforce this rather than leaving it to review:
 
 If someone later derives a category without approval, the suite fails.
 
+## Product Tags round
+
+A Tags column was added, taking the table from nine columns to ten, and the
+pagination bars were rearranged so the product count sits at the left and the
+Previous / page / Next controls at the right, above and below the table.
+
+### The tag source, as found
+
+The investigation ran before any code changed. Sweeping all schemas for
+`%tag%` returned exactly one tag table: `listings.shopify_listing_tag`.
+
+| Question | Answer |
+|---|---|
+| Which table holds the tags? | `listings.shopify_listing_tag` |
+| Which column? | `.tag` (`varchar`), with `.is_deleted = 0` for live rows |
+| Stored or derived? | **Stored.** 147,833 live rows |
+| How does it relate to `inventory.products`? | Indirectly - see below |
+
+### Two traps, both measured rather than assumed
+
+| Trap | Evidence |
+|---|---|
+| `shopify_listing_tag.product_id` looks like a product id but is a **listing id** | Product ids run 1–44,652. `shopify_listing_tag.product_id` runs 344,702–1,022,891, and `shopify_listings.id` runs 344,704–1,022,893. The ranges do not overlap at all. A direct join returns 0 rows, silently. |
+| Tags hang off **parent** listings, which have no SKU | 14,761 of 14,765 tagged listings are parents. Joining tags to products by SKU alone reaches **4 products**. Going through `shopify_listings_parent_child_mapping` reaches **19,723**. |
+
+### Coverage, as measured
+
+| | Products |
+|---|---|
+| With at least one tag | 19,723 (44.2%) |
+| With none - blank cell | 24,920 (55.8%) |
+| Total | 44,643 |
+
+Tags per product: minimum 1, median 14, 95th percentile 54, maximum 132.
+
+### Checks carried out
+
+| Check | Result |
+|---|---|
+| Ten columns, Tags after Category | Pass - live page and snapshot |
+| Tags are blue pills, keyword text still plain dark | Pass |
+| The keyword source label still sits *below* its keyword, in the keyword cell | Pass |
+| No source/provenance column was added | Pass |
+| Product ID 1 (`HLBP128BB`) shows its real tag | Pass - `Handles`, matching the database exactly |
+| A product with 40 stored tags shows all 40 | Pass - product 101 (`CL3RGR`): 8 pills plus a `+32` pill naming the other 32 |
+| Tags are per-product, not a shared sample | Pass - the 500-product snapshot holds 21,836 tags, 1,409 distinct strings and 427 distinct tag-sets across 464 tagged products |
+| A product with no tags gets a blank cell | Pass - 36 of the 500 snapshot products, no placeholder |
+| Count at the left, pager at the right, both bars | Pass - live page and snapshot |
+| Count still shown when there is only one page | Pass - only the pager is hidden |
+| Search, Categories, Clear Filters, paging | Pass - unchanged |
+| Snapshot still standalone | Pass - no `<link>`, no external `<script src>`, no CDN, no `@import`, no credentials |
+| Test suite | Pass - 243 tests, no database required |
+
+The snapshot's own tag figures are stated in its header comment: 21,836 tags
+across 464 of its 500 products, 36 with none.
+
+## Keyword resource round - GEN removed
+
+The keyword provenance label was replaced. It used to read `DB` / `GEN` /
+`MIX`, which names a **method**; it now names the **resource** the word came
+from. No keyword value changed, and no generation rule was touched.
+
+### Why GEN had to go
+
+`GEN` said "the application generated this", which tells a reader nothing about
+where to check the word. Worse, in production it could never say anything else:
+`router.js` passes `product.keywordCategories`, and `findProductKeywordPage`
+never sets that property — so `recorded` was always `undefined`, the `db` and
+`mix` branches were unreachable, and every keyword was `GEN` **by
+construction rather than by evidence**.
+
+### The four resources, as traced from the implementation
+
+| Resource | Where the word is written | Generator field |
+|---|---|---|
+| **Product Type** | the matched `PRODUCT_TYPES` entry in `keyword-generator.js` | `primary`, `secondary[]`, `competitor[]`, fallback `longTail` |
+| **Product Name** | `inventory.products.title` | `productAttributes()`, and `conciseTitlePhrase()` when no type matches |
+| **Product Name + Type** | both, in one phrase | `` `${qualifiers} ${type.primary}` `` |
+| **Database** | a keyword value recorded in ledsone | the `recorded` seam; wins over generation |
+
+Amazon, eBay, Google and Search Console are **deliberately not resources**.
+ledsone holds real keyword data for those platforms (section 6a of the
+documentation), but this application does not read it, so no keyword on this
+page came from them. Labelling one `Amazon` because Amazon happens to hold the
+same word would invent a provenance the code cannot support.
+
+### Checks carried out
+
+| # | Check | Result |
+|---|---|---|
+| 115 | `GEN` reaches the reader nowhere | **Pass** - live page and snapshot, after stripping HTML and CSS comments: no `GEN`, no `MIX`, no `Generated`, no `tag-gen`/`tag-mix` class. The two remaining occurrences in the snapshot file are comments stating the word is deliberately absent |
+| 116 | The pill names a resource, not a method | **Pass** - `Product Type`, `Product Name`, `Product Name + Type`, `Database` |
+| 117 | Product ID 1 traces correctly | **Pass** - see the table below; every one verified against `keyword-generator.js` |
+| 118 | All four keyword columns carry pills | **Pass** - Primary, Secondary, Long-Tail and Competitor all pilled on the live page |
+| 119 | Works for all products, not just id 1 | **Pass** - page 1: 389 keywords, 251 Product Type, 89 Product Name, 49 Product Name + Type, **0 without a pill** |
+| 120 | Snapshot carries the same resources | **Pass** - 500 products, 3,802 keywords: 2,497 Product Type, 862 Product Name, 443 Product Name + Type, 0 Database, **0 without a pill** |
+| 121 | Old fields gone from the snapshot data | **Pass** - rows carry `{"t":…,"r":…}`; no `"s":` source field and no `"i":` input field remain |
+| 122 | One colour per resource type | **Pass** - teal `#0f6b5f`, umber `#8a4b12`, purple `#6b3fa0`, blue `#1b5e9c`; asserted distinct by test, with dark-mode equivalents |
+| 123 | Keyword text still plain dark, pill below it | **Pass** - `.kw .term { color: var(--ink) }`, no background; pill is `inline-block` on the following line |
+| 124 | No separate source column | **Pass** - still exactly ten headers and ten cells per row |
+| 125 | Unprovable provenance gets no pill | **Pass** - `null`, `undefined` and an unknown resource all render the keyword with no pill, rather than falling back to a label |
+| 126 | Keyword VALUES unchanged | **Pass** - only the provenance label changed; every keyword-generation test passes unaltered, and page-1 keyword text is identical to the previous round |
+| 127 | Test suite | **Pass** - 247 tests, 247 passing |
+
+### Product ID 1, as rendered live
+
+| Keyword | Column | Resource |
+|---|---|---|
+| Door Handle | Primary | Product Type |
+| Door Pull | Secondary | Product Type |
+| Pull Handle | Secondary | Product Type |
+| Vintage | Secondary | Product Name |
+| Brass | Secondary | Product Name |
+| Vintage Brass Door Handle | Long-Tail | Product Name + Type |
+| Cabinet Handle | Competitor | Product Type |
+| Cupboard Handle | Competitor | Product Type |
+
 ## Not validated
 
 - **Browser rendering.** The HTML was validated structurally, not opened in a
-  browser. No layout or accessibility review was carried out.
+  browser. No layout or accessibility review was carried out. This includes the
+  Tags column and the rearranged pagination bars: the markup, the CSS rules and
+  the rendered values were checked, but not how they look on screen.
 - **Keyword completeness.** 24 of 50 products on page 1 carry keyword text.
   Whether the remaining 26 genuinely have none, or have keywords that this
   relationship does not reach, was not investigated - the join was measured

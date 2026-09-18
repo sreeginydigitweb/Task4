@@ -5,23 +5,25 @@
  * WHERE THE HTML LIVES
  *
  * The page itself is a real file: product-keywords/page.html. It holds the
- * doctype, the head, the title, ALL of the CSS, the heading, the count line,
- * both paging control bars with their button markup, and the complete
- * seven-column table structure including its headers. That file is the UI; it
+ * doctype, the head, the title, ALL of the CSS, the heading, both paging
+ * control bars with their count line and their button markup, and the complete
+ * ten-column table structure including its headers. That file is the UI; it
  * can be read, shared or handed to a designer on its own.
  *
  * This module builds no structure. It supplies the values page.html marks with
  * a name in double curly braces:
  *
- *   count_text        "Showing 101-150 of 44,627 products."
+ *   count_text        "Showing 101-150 of 44,627 products." Used at the left
+ *                     of BOTH control bars.
  *   page_position     "Page 3 of 893"
  *   prev_attrs        href + rel for the Previous button, or aria-disabled
  *   next_attrs        href + rel for the Next button, or aria-disabled
- *   controls_hidden   "hidden" when the result fits on one page
+ *   controls_hidden   "hidden" when the result fits on one page. It goes on
+ *                     the pager, so the count stays visible.
  *   rows              the <tr> product rows
  *   empty_message     shown only when a page has no rows
  *
- * The rows are the single exception, and unavoidably so: there are 44,627
+ * The rows are the single exception, and unavoidably so: there are 44,643
  * products, read 50 at a time, so they cannot be static markup. Everything
  * around them is.
  *
@@ -44,6 +46,11 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+// Constant lookups, not a data source: the name and the explanation of each
+// keyword RESOURCE, kept in one place so the page and the generator cannot
+// describe a resource differently.
+import { RESOURCE_DESCRIPTION, RESOURCE_LABEL } from './keyword-generator.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -171,18 +178,104 @@ ${body}
 }
 
 /**
- * One cell for a keyword category.
+ * The RESOURCE pill for one keyword, or nothing.
  *
- * A category the database does not record is an actual empty HTML cell.
+ * The pill names the real place the word came from - "Product Type",
+ * "Product Name", "Database" - never how it was arrived at. There is no "GEN"
+ * and no "Generated": that would describe a method and tell the reader nothing
+ * about where to go and check the word.
  *
- * @param {string|null} value
+ * A term whose resource could not be established carries NO pill at all.
+ * Picking one would be inventing provenance, which is worse than saying
+ * nothing.
+ *
+ * @param {string|null|undefined} resource  A RESOURCE value from the generator.
  * @returns {string}
  */
-function categoryCell(value) {
-  if (value === null || value === undefined || value === '') {
+function resourceTag(resource) {
+  const label = RESOURCE_LABEL[resource];
+  if (label === undefined) return '';
+
+  const why = RESOURCE_DESCRIPTION[resource] ?? label;
+  return `<span class="tag tag-${escapeHtml(resource)}" title="${escapeHtml(why)}">${escapeHtml(label)}</span>`;
+}
+
+/**
+ * One cell for a keyword category.
+ *
+ * Each keyword is ORDINARY TEXT - no colour, no chip, no background - with a
+ * small RESOURCE pill on the line BELOW it naming where that keyword came
+ * from. The pill is the only coloured thing in the cell, and it is not a
+ * column of its own.
+ *
+ * A category with nothing to show is an actual empty HTML cell.
+ *
+ * @param {Array<{term: string, resource: string|null}>|undefined} terms
+ * @returns {string}
+ */
+function categoryCell(terms) {
+  if (!Array.isArray(terms) || terms.length === 0) {
     return '<td></td>';
   }
-  return `<td>${escapeHtml(value)}</td>`;
+
+  const keywords = terms
+    .map(
+      ({ term, resource }) =>
+        // Two blocks: the keyword, then its resource pill on the line BELOW
+        // it. The keyword is plain text; only the pill is coloured.
+        '<span class="kw">' +
+        `<span class="term">${escapeHtml(term)}</span>` +
+        resourceTag(resource) +
+        '</span>',
+    )
+    .join('');
+
+  return `<td>${keywords}</td>`;
+}
+
+/**
+ * How many product tags a cell shows before the rest go into a "+N" pill.
+ *
+ * Not a limit on the DATA - every tag ledsone holds for the product is passed
+ * in, and every one is reachable from the cell. It is a limit on the height of
+ * a table row: products carry a median of 14 tags and as many as 132, and a
+ * row a hundred pills tall makes the table unusable. The overflow pill names
+ * the remainder in its tooltip, so nothing is dropped or hidden.
+ */
+export const TAGS_SHOWN = 8;
+
+/**
+ * The PRODUCT TAGS cell.
+ *
+ * These are ledsone's own stored tags for the product, shown as small blue
+ * pills. They are NOT the keyword RESOURCE pills - different data,
+ * different column, different colour - and nothing here derives a tag from
+ * anything. A product the business recorded no tags against gets a genuinely
+ * empty cell: no placeholder, no tag borrowed from the product name.
+ *
+ * @param {string[]|null|undefined} tags  ledsone's tags, already de-duplicated.
+ * @returns {string}
+ */
+function tagsCell(tags) {
+  const values = Array.isArray(tags) ? tags.filter((tag) => typeof tag === 'string' && tag.trim() !== '') : [];
+
+  if (values.length === 0) {
+    return '<td class="tags"></td>';
+  }
+
+  const pills = values
+    .slice(0, TAGS_SHOWN)
+    .map((tag) => `<span class="ptag">${escapeHtml(tag.trim())}</span>`)
+    .join('');
+
+  const rest = values.slice(TAGS_SHOWN);
+  const more =
+    rest.length === 0
+      ? ''
+      : `<span class="ptag ptag-more" title="${escapeHtml(rest.map((tag) => tag.trim()).join(', '))}">` +
+        `+${number(rest.length)}</span>`;
+
+  return `<td class="tags">${pills}${more}</td>`;
 }
 
 /**
@@ -227,9 +320,13 @@ function imageCell(url, productName) {
  * @param {string} category  Empty for no filter.
  * @returns {string}
  */
-function pageHref(page, category) {
-  const query = `page=${Math.trunc(page)}`;
-  return category === '' ? `/product-keywords?${query}` : `/product-keywords?${query}&category=${encodeURIComponent(category)}`;
+function pageHref(page, category, search) {
+  const query = [`page=${Math.trunc(page)}`];
+
+  if (category !== '') query.push(`category=${encodeURIComponent(category)}`);
+  if (search !== '') query.push(`search=${encodeURIComponent(search)}`);
+
+  return `/product-keywords?${query.join('&')}`;
 }
 
 /**
@@ -244,12 +341,13 @@ function pageHref(page, category) {
  * @param {number|null} target  The page to link to, or null for disabled.
  * @param {'prev'|'next'} rel
  * @param {string} category
+ * @param {string} search
  * @returns {string}
  */
-function buttonAttributes(target, rel, category) {
+function buttonAttributes(target, rel, category, search) {
   return target === null
     ? 'aria-disabled="true"'
-    : `href="${escapeHtml(pageHref(target, category))}" rel="${rel}"`;
+    : `href="${escapeHtml(pageHref(target, category, search))}" rel="${rel}"`;
 }
 
 /**
@@ -280,21 +378,21 @@ function categoryOptions(categories, selected, total) {
  * The Product Keywords page.
  *
  * This function builds VALUES, not structure. The document - doctype, head,
- * CSS, heading, count line, both control bars with their buttons, and the
- * seven-column table with its headers - is written out in page.html, and is
- * filled here with the seven slots that depend on the data:
+ * CSS, heading, both control bars with their count line and their buttons, and
+ * the ten-column table with its headers - is written out in page.html, and is
+ * filled here with the slots that depend on the data:
  *
  *   count_text, page_position, prev_attrs, next_attrs, controls_hidden,
- *   rows, empty_message
+ *   rows, empty_message, category_options, search_value, clear_hidden
  *
  * The rows are the one piece of markup built here, because they come from the
- * database a page at a time. Each is exactly eight cells, in the order
- * page.html heads them, and every value passes through escapeHtml. A keyword
- * category with nothing to show is an empty cell, never placeholder text, and
- * so is a product the database holds no image for.
+ * database a page at a time. Each is exactly ten cells, in the order page.html
+ * heads them, and every value passes through escapeHtml. A keyword category
+ * with nothing to show is an empty cell, never placeholder text, and so is a
+ * product the database holds no image, no category or no tags for.
  *
  * @param {object} options
- * @param {Array<{id: number, sku: string, title: string, image?: string|null}>} options.products
+ * @param {Array<{id: number, sku: string, title: string, image?: string|null, category?: string|null, tags?: string[]}>} options.products
  * @param {number} options.total     Products in the catalogue.
  * @param {number} options.page      1-based.
  * @param {number} options.pageCount
@@ -311,10 +409,13 @@ export function renderProductKeywordsPage({
   classify,
   categories = [],
   category = '',
+  search = '',
   catalogueTotal = total,
 }) {
   const rows = products
     .map((product) => {
+      // classify returns each category split into its individual keywords,
+      // each with the source it came from.
       const keywords = classify(product);
       const productCategory = product.category ?? null;
 
@@ -327,6 +428,7 @@ export function renderProductKeywordsPage({
         (productCategory === null || productCategory === ''
           ? '<td class="category"></td>'
           : `<td class="category">${escapeHtml(productCategory)}</td>`) +
+        tagsCell(product.tags) +
         categoryCell(keywords.primary) +
         categoryCell(keywords.secondary) +
         categoryCell(keywords.longTail) +
@@ -338,13 +440,16 @@ export function renderProductKeywordsPage({
 
   const first = products.length === 0 ? 0 : (page - 1) * pageSize + 1;
 
-  // The category is a database value, and count_text is inserted as markup, so
-  // it is escaped here - once, for both wordings.
+  // The category and the search text are both values from outside, and
+  // count_text is inserted as markup, so both are escaped here - once, for
+  // every wording.
   const inCategory = category === '' ? '' : ` in ${escapeHtml(category)}`;
+  const matching = search === '' ? '' : ` matching &ldquo;${escapeHtml(search)}&rdquo;`;
+  const filters = `${inCategory}${matching}`;
   const countText =
     products.length === 0
-      ? `No products${inCategory}.`
-      : `Showing ${number(first)}&ndash;${number(first + products.length - 1)} of ${number(total)} products${inCategory}.`;
+      ? `No products${filters}.`
+      : `Showing ${number(first)}&ndash;${number(first + products.length - 1)} of ${number(total)} products${filters}.`;
 
   // One page of results has nowhere to page to, so page.html hides both bars
   // rather than showing two buttons that cannot be used.
@@ -353,16 +458,19 @@ export function renderProductKeywordsPage({
   return fillTemplate({
     count_text: countText,
     page_position: `Page ${number(page)} of ${number(pageCount)}`,
-    prev_attrs: buttonAttributes(page > 1 ? page - 1 : null, 'prev', category),
-    next_attrs: buttonAttributes(page < pageCount ? page + 1 : null, 'next', category),
+    prev_attrs: buttonAttributes(page > 1 ? page - 1 : null, 'prev', category, search),
+    next_attrs: buttonAttributes(page < pageCount ? page + 1 : null, 'next', category, search),
     controls_hidden: single ? ' hidden' : '',
     rows,
     // inCategory is already escaped; the fixed words around it need none.
-    empty_message: rows === '' ? `    <p class="empty">No products found${inCategory}.</p>` : '',
+    empty_message: rows === '' ? `    <p class="empty">No products found${filters}.</p>` : '',
     category_options: categoryOptions(categories, category, catalogueTotal),
-    // The Clear link is written out in page.html; it is only shown while a
+    // Goes into a value="" attribute, so it is escaped like any other database
+    // or user value.
+    search_value: escapeHtml(search),
+    // Clear Filters is written out in page.html; it is only shown while a
     // filter is on, so the control does not sit there doing nothing.
-    clear_hidden: category === '' ? ' hidden' : '',
+    clear_hidden: category === '' && search === '' ? ' hidden' : '',
   });
 }
 

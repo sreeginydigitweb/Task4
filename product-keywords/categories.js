@@ -223,6 +223,17 @@ export async function countInCategory(category) {
 }
 
 /**
+ * Every product id in a category, in catalogue order.
+ *
+ * @param {string} category
+ * @returns {Promise<Array<unknown>>}
+ */
+export async function idsInCategory(category) {
+  const { idsByCategory } = await getCategoryIndex();
+  return idsByCategory.get(category) ?? [];
+}
+
+/**
  * The product ids on one page of a filtered list.
  *
  * @param {string} category

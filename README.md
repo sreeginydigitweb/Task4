@@ -6,10 +6,10 @@ PostgreSQL database.
 One page, one table, no framework. Node 20 with a single dependency (`pg`).
 
 The page itself is a plain, complete HTML file: **`product-keywords/page.html`**.
-It holds the doctype, head, title, all of the CSS, the heading, the count area,
-both paging control bars with their buttons, the category filter, and the
-full nine-column table
-structure including every header. Open it and you can see the whole screen
+It holds the doctype, head, title, all of the CSS, the heading, both paging
+control bars (product count at the left, Previous / page / Next at the right),
+the category filter, and the full ten-column table structure including every
+header. Open it and you can see the whole screen
 without reading any JavaScript, and it can be shared on its own as the UI
 reference. The application only fills in values - the product rows and the
 paging state - read live from the database. Edit that file to change how the
@@ -24,14 +24,33 @@ ledsone DB  ->  SQL query  ->  Node application  ->  HTML table
 Show the product catalogue alongside the keyword data recorded against each
 product, in the table structure requested:
 
-Product Image · SKU · Product ID · Product Name · Category ·
+Product Image · SKU · Product ID · Product Name · Category · Tags ·
 Primary Keyword · Secondary Keywords · Long-Tail Keywords · Competitor Keywords
 
-Five of those nine columns are backed by ledsone. The four keyword columns
-are not: they are generated from the Product Name, and a cell stays genuinely
-blank rather than being filled with an invented value when the name supports
-nothing meaningful. See **Current data limitations** and **Keyword generation**
-below - together they are the most important part of this file.
+Six of those ten columns are backed by ledsone. The four keyword columns are
+not: they are generated from the Product Name, and a cell stays genuinely blank
+rather than being filled with an invented value when the name supports nothing
+meaningful. See **Current data limitations** and **Keyword generation** below -
+together they are the most important part of this file.
+
+There is deliberately no source/provenance column. A keyword's RESOURCE pill
+sits underneath the keyword itself, inside its own cell.
+
+### Two different kinds of tag
+
+The page shows both, and they are unrelated:
+
+| | **Product Tags** | **Keyword resource pills** |
+|---|---|---|
+| What | ledsone's own stored tags: `Handles`, `Threaded Rod` | The RESOURCE a keyword came from: `Product Type`, `Product Name`, `Product Name + Type`, `Database` |
+| Where | the Tags column | underneath each keyword, in the keyword cell |
+| Never | - | `GEN` or `Generated` - a method is not a resource |
+| Look | small blue pills, blue ink on a pale blue ground | solid teal / umber / purple / blue, white label - one colour per resource type |
+| Source | `listings.shopify_listing_tag` | the Product Type map, the Product Name, or a recorded ledsone value |
+
+Product Tags are business data and are never derived, guessed or invented.
+19,723 of 44,643 products carry at least one; the other 24,920 show a blank
+cell. See **Product Tags** below for how they are reached.
 
 ## Scope: ledsone only
 
@@ -81,7 +100,7 @@ Open <http://localhost:3100/product-keywords>.
 Every setting is documented in it.
 
 ```bash
-npm test     # 184 tests, no database required
+npm test     # 247 tests, no database required
 ```
 
 ## The shareable single file
@@ -98,9 +117,11 @@ npm run snapshot -- --limit 200 --embed-images
 npm run snapshot -- --out share/for-review.html
 ```
 
-All nine columns, product images, the category filter and paging (Previous /
-Next at top and bottom, plus arrow keys and a `#page=N&category=...` fragment)
-work inside the file.
+All ten columns - product images, Product Tags, the category filter and paging
+(Previous / Next at top and bottom, plus arrow keys and a
+`#page=N&category=...` fragment) - work inside the file. Every product the file
+carries brings every tag ledsone holds for it; no product is sampled and no tag
+list is truncated in the data.
 
 Two things to be clear about:
 
@@ -140,6 +161,7 @@ script-free - `page.html` remains its server-side template.
 | Product ID | `inventory.products.id` |
 | Product Name | `inventory.products.title` (there is no `product_name` column) |
 | Category | `listings.shopify_listings.product_type` joined by SKU, falling back to the product type the Product Name states. 47.6% of products have one; the rest show a blank cell. Nothing is written back. |
+| Tags | `listings.shopify_listing_tag.tag`. **Stored, not derived.** 19,723 of 44,643 products (44.2%) carry at least one; the other 24,920 show a blank cell. See **Product Tags** below. |
 
 The image rule - designated main image first, first gallery image as fallback -
 is reused unchanged from **Smart Inventory Control** (`../Inventory System`),
@@ -161,6 +183,67 @@ matching `%primary%`, `%secondary%`, `%long_tail%`, `%longtail%`,
 `%competitor%`, `%seed%`, `%suggestion%` and `%phrase%`. Two rows came back,
 both unrelated to keywords. The queries are in
 `query-packs/keyword-source-investigation.md`.
+
+## Product Tags
+
+Tags are **stored business data**, not derived. They come from one table:
+
+| | |
+|---|---|
+| Table | `listings.shopify_listing_tag` |
+| Tag text | `.tag` (stored with a leading space on many rows, so it is trimmed) |
+| Owner | `.product_id` |
+| Live rows | `.is_deleted = 0` |
+
+### `product_id` is a LISTING id, not a product id
+
+This is the one thing worth reading carefully. Despite its name,
+`shopify_listing_tag.product_id` is **not** `inventory.products.id`:
+
+| Column | Range |
+|---|---|
+| `inventory.products.id` | 1 – 44,652 |
+| `shopify_listing_tag.product_id` | 344,702 – 1,022,891 |
+| `listings.shopify_listings.id` | 344,704 – 1,022,893 |
+
+It is `shopify_listings.id`. Joining it straight to a product id matches
+nothing at all - silently, with no error.
+
+### The tags hang off the PARENT listing
+
+Of the 14,765 tagged listings, **14,761 are parent listings**, and a parent
+listing has no SKU. So joining tags to products by SKU alone reaches **4
+products out of 44,643**. The children carry the SKUs, and
+`listings.shopify_listings_parent_child_mapping` links them. Following it takes
+coverage from 4 products to 19,723.
+
+### The relationship, end to end
+
+```
+inventory.products.sku
+  -> shopify_listings  (coalesce(nullif(mapped_sku,''), sku) = products.sku)
+       -> that listing's own tags                        (4 products)
+       -> parent_child_mapping.child_id -> .parent_id
+            -> the parent listing's tags            (19,723 products)
+```
+
+Tags from both are combined, trimmed, de-duplicated and sorted. Coverage:
+
+| | Products |
+|---|---|
+| With at least one tag | 19,723 (44.2%) |
+| With none - blank cell | 24,920 (55.8%) |
+| Total | 44,643 |
+
+Products carry a median of 14 tags and as many as 132. A cell draws the first
+eight as pills and names the remainder in a `+N` pill's tooltip - a limit on
+row height, not on the data: every tag is carried and every one is reachable.
+
+**Product ID 1** (`HLBP128BB`, a brass pull and push door handle) has exactly
+one tag: `Handles`.
+
+The lookup runs from the 50 rows being shown rather than from the tag table, so
+it is an indexed lookup per listing rather than a scan of 147,833 tag rows.
 
 ## Keyword generation
 
@@ -213,13 +296,13 @@ product-keywords/     the application
   categories.js         product categories and the filter index
   keyword-generator.js  deterministic Product Name fallback
   page.html             THE PAGE - doctype, head, title, all CSS, heading,
-                        count area, both control bars with buttons, and the
-                        complete 9-column table structure
+                        both control bars (count left, pager right) and the
+                        complete 10-column table structure
   render.js             supplies values for page.html; builds the rows only
   snapshot.js           builds the self-contained single-file HTML snapshot
   router.js             paths and page numbers
   server.js             node:http server and security headers
-  *.test.js             184 tests, no database required
+  *.test.js             247 tests, no database required
   .env.example          documented configuration template
 
 share/                the generated single-file HTML snapshot (build artifact)

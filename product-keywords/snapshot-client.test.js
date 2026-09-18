@@ -6,9 +6,9 @@
  * The script is extracted from the generated document and executed against a
  * small DOM stand-in built below, which implements only the handful of DOM
  * calls the script actually makes. That is enough to prove the real things:
- * the script parses, it draws one page of eight-cell rows from the embedded
+ * the script parses, it draws one page of ten-cell rows from the embedded
  * data, the paging buttons move between pages and disable at the ends, and a
- * product with no image gets an empty cell.
+ * product with no image or no tags gets an empty cell.
  *
  * It is a stand-in, not a browser - it cannot prove how the page LOOKS. The
  * visual check is opening the file, which is recorded in
@@ -98,6 +98,23 @@ class Fragment {
   }
 }
 
+/** A text node, as document.createTextNode returns. */
+class TextNode {
+  constructor(text) {
+    this.tagName = '#text';
+    this.children = [];
+    this._text = String(text);
+  }
+
+  get textContent() {
+    return this._text;
+  }
+
+  tree() {
+    return [this];
+  }
+}
+
 /**
  * Build a document from the snapshot's markup.
  *
@@ -123,11 +140,12 @@ function documentFor(html) {
   elements['snapshot-data'] = new Element('script');
   elements['snapshot-data'].textContent = json;
 
-  // The two control bars, which the script hides as a group by class.
-  const bars = [...html.matchAll(/class="controls controls-(top|bottom)"/g)].map(() => {
-    const bar = new Element('div');
-    bar.className = 'controls';
-    return bar;
+  // The two pagers, which the script hides as a group by class. Only the
+  // pager is hidden on a one-page result - the count beside it stays.
+  const bars = [...html.matchAll(/<nav class="pager"/g)].map(() => {
+    const pager = new Element('nav');
+    pager.className = 'pager';
+    return pager;
   });
 
   const listeners = {};
@@ -135,9 +153,10 @@ function documentFor(html) {
   const document = {
     getElementById: (id) => elements[id] ?? null,
     createElement: (tag) => new Element(tag),
+    createTextNode: (text) => new TextNode(text),
     createDocumentFragment: () => new Fragment(),
     querySelectorAll: (selector) => {
-      assert.equal(selector, '.controls', `unexpected selector: ${selector}`);
+      assert.equal(selector, '.pager', `unexpected selector: ${selector}`);
       return bars;
     },
     addEventListener: (type, handler) => {
@@ -186,10 +205,13 @@ const product = (n, overrides = {}) => ({
   id: String(n),
   name: `Product ${n}`,
   category: `Category ${n}`,
-  primary: `Primary ${n}`,
-  secondary: `Secondary ${n}`,
-  longTail: `LongTail ${n}`,
-  competitor: `Competitor ${n}`,
+  // ledsone’s own stored product tags.
+  tags: [`Tag ${n}A`, `Tag ${n}B`],
+  // Each keyword category is its individual keywords, with the source of each.
+  primary: [{ t: `Primary ${n}`, r: 'product-type' }],
+  secondary: [{ t: `Secondary ${n}`, r: 'product-type' }],
+  longTail: [{ t: `LongTail ${n}`, r: 'product-type' }],
+  competitor: [{ t: `Competitor ${n}`, r: 'product-type' }],
   ...overrides,
 });
 
@@ -207,11 +229,11 @@ test('the inline script runs and draws the first page', () => {
   assert.equal(rows[0].tagName, 'TR');
 });
 
-test('every drawn row has eight cells, in the column order', () => {
+test('every drawn row has ten cells, in the column order', () => {
   const { elements } = run(FIVE);
 
   for (const row of elements.rows.children) {
-    assert.equal(row.children.length, 9, 'nine cells per row');
+    assert.equal(row.children.length, 10, 'ten cells per row');
   }
 
   const first = elements.rows.children[0].children;
@@ -220,10 +242,216 @@ test('every drawn row has eight cells, in the column order', () => {
   assert.equal(first[2].textContent, '1');
   assert.equal(first[3].textContent, 'Product 1');
   assert.equal(first[4].textContent, 'Category 1');
-  assert.equal(first[5].textContent, 'Primary 1');
-  assert.equal(first[6].textContent, 'Secondary 1');
-  assert.equal(first[7].textContent, 'LongTail 1');
-  assert.equal(first[8].textContent, 'Competitor 1');
+
+  // The Tags cell: ledsone's own stored product tags, one pill each.
+  assert.equal(first[5].className, 'tags');
+  assert.equal(first[5].textContent, 'Tag 1ATag 1B');
+
+  // The four keyword cells hold the keyword plus its resource pill.
+  assert.equal(first[6].textContent, 'Primary 1Product Type');
+  assert.equal(first[7].textContent, 'Secondary 1Product Type');
+  assert.equal(first[8].textContent, 'LongTail 1Product Type');
+  assert.equal(first[9].textContent, 'Competitor 1Product Type');
+});
+
+// ---------------------------------------------------------------------------
+// The PRODUCT TAGS cell - ledsone's own stored tags, drawn as blue pills.
+//
+// Not the DB/GEN/MIX keyword source tags: different data, different column.
+// ---------------------------------------------------------------------------
+
+/** The Tags cell of the first drawn row. */
+const tagsCell = (elements) => elements.rows.children[0].children[5];
+
+test("a product's tags are drawn as pills in the Tags cell", () => {
+  const { elements } = run([
+    product(1, { tags: ['Door Handle', 'Brass', 'Cabinet Handle', 'Pull Handle'] }),
+    product(2),
+  ]);
+  const cell = tagsCell(elements);
+
+  assert.equal(cell.className, 'tags');
+  assert.deepEqual(
+    cell.children.map((pill) => pill.className),
+    ['ptag', 'ptag', 'ptag', 'ptag'],
+  );
+  assert.deepEqual(
+    cell.children.map((pill) => pill.textContent),
+    ['Door Handle', 'Brass', 'Cabinet Handle', 'Pull Handle'],
+  );
+});
+
+test('a product with no tags gets a genuinely empty Tags cell', () => {
+  for (const missing of [[], null, undefined]) {
+    const { elements } = run([product(1, { tags: missing }), product(2)]);
+    const cell = tagsCell(elements);
+
+    assert.equal(cell.children.length, 0, String(missing));
+    assert.equal(cell.textContent, '', 'no placeholder stands in for an absent tag');
+  }
+});
+
+test('a product tag is set as text, so markup in a tag cannot become elements', () => {
+  const { elements } = run([product(1, { tags: ['<b>bold</b><script>alert(1)</script>'] }), product(2)]);
+  const pill = tagsCell(elements).children[0];
+
+  assert.equal(pill.textContent, '<b>bold</b><script>alert(1)</script>');
+  assert.equal(pill.children.length, 0, 'no element was created from a tag');
+});
+
+test('a product with many tags keeps every one of them reachable', () => {
+  const many = Array.from({ length: 12 }, (_, at) => `Tag ${at + 1}`);
+  const { elements } = run([product(1, { tags: many }), product(2)]);
+  const cell = tagsCell(elements);
+
+  assert.equal(cell.children.length, 9, 'eight pills plus one overflow pill');
+  assert.deepEqual(cell.children.slice(0, 8).map((pill) => pill.textContent), many.slice(0, 8));
+
+  const more = cell.children[8];
+  assert.equal(more.className, 'ptag ptag-more');
+  assert.equal(more.textContent, '+4');
+  assert.equal(more.title, 'Tag 9, Tag 10, Tag 11, Tag 12', 'the rest are named, not dropped');
+});
+
+test('a product tag never carries a keyword source class', () => {
+  const { elements } = run([product(1), product(2)]);
+
+  for (const pill of tagsCell(elements).children) {
+    assert.ok(!String(pill.className).includes('tag-db'));
+    assert.ok(!String(pill.className).includes('tag-gen'));
+    assert.ok(!String(pill.className).includes('tag-mix'));
+  }
+});
+
+test('every product in the snapshot carries its own tags, not a shared sample', () => {
+  // Tags are per-product data. If they were ever hard-coded or taken from one
+  // example product, every row would show the same pills.
+  const { elements } = run(FIVE);
+  const drawn = elements.rows.children.map((row) => row.children[5].textContent);
+
+  assert.deepEqual(drawn, ['Tag 1ATag 1B', 'Tag 2ATag 2B']);
+});
+
+// ---------------------------------------------------------------------------
+// Keyword text is ordinary text; only the small tag is coloured.
+// ---------------------------------------------------------------------------
+
+/** The span.kw lines inside one keyword cell. */
+const keywordLines = (cell) => cell.children.filter((child) => child.className === 'kw');
+
+test('the tag sits below its keyword, each in its own block', () => {
+  const { elements } = run([
+    product(1, {
+      secondary: [
+        { t: 'Door Pull', r: 'database' },
+        { t: 'Pull Handle', r: 'product-type' },
+        { t: 'Brass', r: 'product-name-type' },
+      ],
+    }),
+    product(2),
+  ]);
+
+  const lines = keywordLines(elements.rows.children[0].children[7]);
+  assert.equal(lines.length, 3, 'one block per keyword');
+
+  // Each .kw holds a .term block then a .tag block - keyword first, tag below.
+  for (const line of lines) {
+    assert.deepEqual(
+      line.children.map((child) => String(child.className).split(' ')[0]),
+      ['term', 'tag'],
+    );
+  }
+
+  assert.deepEqual(
+    lines.map((line) => line.children[0].textContent),
+    ['Door Pull', 'Pull Handle', 'Brass'],
+  );
+  // The pill names the RESOURCE - never GEN, never "Generated".
+  assert.deepEqual(
+    lines.map((line) => line.children[1].textContent),
+    ['Database', 'Product Type', 'Product Name + Type'],
+  );
+});
+
+test('the keyword itself carries no colour class, only the pill does', () => {
+  const { elements } = run([
+    product(1, { secondary: [{ t: 'Door Pull', r: 'database' }] }),
+    product(2),
+  ]);
+  const line = keywordLines(elements.rows.children[0].children[7])[0];
+
+  // The line is a plain .kw - no chip, no colour class, no background.
+  assert.equal(line.className, 'kw');
+
+  const tag = line.children.find((child) => String(child.className).startsWith('tag'));
+  assert.equal(tag.className, 'tag tag-database', 'the pill is the only thing classed by resource');
+  assert.equal(tag.textContent, 'Database');
+  assert.equal(tag.title, 'Recorded as a keyword value in the ledsone database');
+});
+
+test('each resource gets its own pill class and its own label', () => {
+  const expected = [
+    ['product-type', 'Product Type'],
+    ['product-name', 'Product Name'],
+    ['product-name-type', 'Product Name + Type'],
+    ['database', 'Database'],
+  ];
+
+  for (const [resource, label] of expected) {
+    const { elements } = run([product(1, { primary: [{ t: 'Term', r: resource }] }), product(2)]);
+    const line = keywordLines(elements.rows.children[0].children[6])[0];
+    const tag = line.children.find((child) => String(child.className).startsWith('tag'));
+
+    assert.equal(tag.className, `tag tag-${resource}`);
+    assert.equal(tag.textContent, label);
+  }
+});
+
+test('a keyword with unproven provenance gets NO pill in the snapshot either', () => {
+  for (const resource of [null, undefined, 'nonsense']) {
+    const { elements } = run([product(1, { primary: [{ t: 'Term', r: resource }] }), product(2)]);
+    const line = keywordLines(elements.rows.children[0].children[6])[0];
+
+    assert.equal(line.children[0].textContent, 'Term', 'the keyword is still shown');
+    assert.equal(
+      line.children.filter((child) => String(child.className).startsWith('tag')).length,
+      0,
+      `no pill for resource ${String(resource)}`,
+    );
+  }
+});
+
+test('the snapshot says GEN nowhere - not in its data, not in its script', () => {
+  const html = buildSnapshotHtml({ rows: FIVE, styles: '.x {}', pageSize: 2 });
+  const visible = html.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  assert.ok(!/\bGEN\b/.test(visible), 'GEN must not appear');
+  assert.ok(!/\bMIX\b/.test(visible), 'MIX must not appear');
+  assert.ok(!/\bGenerated\b/.test(visible), '"Generated" is a method, not a resource');
+  assert.ok(!visible.includes('tag-gen'), 'no gen class');
+  assert.ok(!visible.includes('tag-mix'), 'no mix class');
+  assert.ok(!visible.includes('"s":'), 'the old source field is gone from the data');
+});
+
+test('a keyword category with nothing in it is an empty cell, with no tag', () => {
+  const { elements } = run([product(1, { longTail: [] }), product(2)]);
+  const cell = elements.rows.children[0].children[8];
+
+  assert.equal(cell.children.length, 0);
+  assert.equal(cell.textContent, '');
+});
+
+test('a keyword containing markup stays text, tag and all', () => {
+  const { elements } = run([
+    product(1, { primary: [{ t: '<b>Lamp</b><script>alert(1)</script>', r: 'product-type' }] }),
+    product(2),
+  ]);
+  const line = keywordLines(elements.rows.children[0].children[6])[0];
+
+  assert.equal(line.children[0].textContent, '<b>Lamp</b><script>alert(1)</script>');
+  assert.equal(line.children[1].textContent, 'Product Type');
+  // Two spans only - the keyword made no elements of its own.
+  assert.equal(line.children.filter((child) => child.tagName === 'SPAN').length, 2);
 });
 
 test('a product with an image gets an img element with alt text and a size', () => {
@@ -274,7 +502,7 @@ test('product text is set as text, so markup in a name cannot become elements', 
 test('the count line reports the rows on the page and the snapshot total', () => {
   const { elements } = run(FIVE);
 
-  assert.equal(elements.count.textContent, 'Showing 1–2 of 5 products in this snapshot.');
+  assert.equal(elements["count-top"].textContent, 'Showing 1–2 of 5 products in this snapshot.');
 });
 
 test('both control bars show the same page position', () => {
@@ -282,6 +510,32 @@ test('both control bars show the same page position', () => {
 
   assert.equal(elements['position-top'].textContent, 'Page 1 of 3');
   assert.equal(elements['position-bottom'].textContent, 'Page 1 of 3');
+});
+
+test('the count is written at the left of BOTH control bars', () => {
+  const { elements } = run(FIVE);
+
+  assert.equal(elements['count-top'].textContent, 'Showing 1–2 of 5 products in this snapshot.');
+  assert.equal(elements['count-bottom'].textContent, elements['count-top'].textContent);
+
+  // And both keep up as the page changes.
+  elements['next-top'].click();
+  assert.equal(elements['count-bottom'].textContent, elements['count-top'].textContent);
+  assert.equal(elements['count-bottom'].textContent, 'Showing 3–4 of 5 products in this snapshot.');
+});
+
+test('the count comes before the pager in each bar, so it sits at the left', () => {
+  const html = buildSnapshotHtml({ rows: FIVE, styles: '.x {}', pageSize: 2 });
+
+  for (const place of ['top', 'bottom']) {
+    const bar = new RegExp(`<div class="controls controls-${place}">([\\s\\S]*?)</div>`).exec(html)?.[1] ?? '';
+
+    const count = bar.indexOf(`id="count-${place}"`);
+    const pager = bar.indexOf('<nav class="pager"');
+
+    assert.ok(count !== -1 && pager !== -1, `${place}: the bar carries both`);
+    assert.ok(count < pager, `${place}: the count comes before the pager`);
+  }
 });
 
 test('Next moves on, and both bars follow', () => {
@@ -292,7 +546,7 @@ test('Next moves on, and both bars follow', () => {
   assert.equal(elements['position-top'].textContent, 'Page 2 of 3');
   assert.equal(elements['position-bottom'].textContent, 'Page 2 of 3');
   assert.equal(elements.rows.children[0].children[1].textContent, 'SKU3');
-  assert.equal(elements.count.textContent, 'Showing 3–4 of 5 products in this snapshot.');
+  assert.equal(elements["count-top"].textContent, 'Showing 3–4 of 5 products in this snapshot.');
 });
 
 test('the bottom bar drives the same page as the top one', () => {
@@ -327,7 +581,7 @@ test('the last page shows only the rows that remain', () => {
   elements['next-top'].click();
 
   assert.equal(elements.rows.children.length, 1, 'five rows at two per page leaves one');
-  assert.equal(elements.count.textContent, 'Showing 5–5 of 5 products in this snapshot.');
+  assert.equal(elements["count-top"].textContent, 'Showing 5–5 of 5 products in this snapshot.');
 });
 
 test('paging past either end is clamped rather than breaking', () => {
@@ -421,7 +675,7 @@ test('the count updates to the filtered total', () => {
   const context = run(MIXED);
   choose(context, 'Lights');
 
-  assert.equal(context.elements.count.textContent, 'Showing 1–2 of 4 products in Lights in this snapshot.');
+  assert.equal(context.elements["count-top"].textContent, 'Showing 1–2 of 4 products in Lights in this snapshot.');
 });
 
 test('pagination keeps working after filtering, within the category', () => {
@@ -462,10 +716,10 @@ test('filtering restarts at page 1, because page 3 of everything is not page 3 o
 test('All Categories brings everything back', () => {
   const context = run(MIXED);
   choose(context, 'Switches');
-  assert.equal(context.elements.count.textContent, 'Showing 1–1 of 1 products in Switches in this snapshot.');
+  assert.equal(context.elements["count-top"].textContent, 'Showing 1–1 of 1 products in Switches in this snapshot.');
 
   choose(context, '');
-  assert.equal(context.elements.count.textContent, 'Showing 1–2 of 6 products in this snapshot.');
+  assert.equal(context.elements["count-top"].textContent, 'Showing 1–2 of 6 products in this snapshot.');
   assert.equal(context.elements['position-top'].textContent, 'Page 1 of 3');
 });
 
@@ -514,7 +768,7 @@ test('a category the file does not hold is treated as no filter', () => {
   for (const hash of ['#category=Nonsense', '#page=1&category=', '#category=%E0%A4%A']) {
     const context = run(MIXED, hash);
 
-    assert.equal(context.elements.count.textContent, 'Showing 1–2 of 6 products in this snapshot.', hash);
+    assert.equal(context.elements["count-top"].textContent, 'Showing 1–2 of 6 products in this snapshot.', hash);
   }
 });
 
@@ -526,11 +780,136 @@ test('a category needing encoding round-trips through the address', () => {
   assert.equal(context.elements.rows.children.length, 1);
 });
 
-test('control bars are hidden when everything fits on one page', () => {
-  const { bars } = run([product(1), product(2)]);
+// ---------------------------------------------------------------------------
+// The search box, inside the file.
+// ---------------------------------------------------------------------------
+
+/** Type into the search box and let the handler run. */
+function type(context, value) {
+  context.elements.search.value = value;
+  for (const handler of context.elements.search.listeners.input ?? []) handler({ target: context.elements.search });
+}
+
+const SEARCHABLE = [
+  product(1, { sku: 'HLBP128BB', name: 'Brass Door Handle', category: 'Handles' }),
+  product(2, { sku: 'SWRS1GBM', name: 'Wall Light Switch', category: 'Switches' }),
+  product(3, { sku: 'HLBK30GB', name: 'Drawer Pull Knob', category: 'Handles' }),
+  product(4, { sku: 'CL3RBL', name: 'Fabric Cable', category: 'Cables' }),
+];
+
+test('the snapshot carries a search box with the expected placeholder', () => {
+  const html = buildSnapshotHtml({ rows: SEARCHABLE, styles: '.x {}', pageSize: 2 });
+
+  assert.match(html, /<input type="search" id="search"/);
+  assert.match(html, /placeholder="Search by SKU, Product ID or name\.\.\."/);
+  assert.ok(html.includes('Clear Filters'));
+});
+
+test('searching matches the product name', () => {
+  const context = run(SEARCHABLE);
+  type(context, 'handle');
+
+  assert.deepEqual(
+    context.elements.rows.children.map((row) => row.children[1].textContent),
+    ['HLBP128BB'],
+  );
+  assert.equal(context.elements["count-top"].textContent, 'Showing 1–1 of 1 products matching “handle” in this snapshot.');
+});
+
+test('searching matches the SKU', () => {
+  const context = run(SEARCHABLE);
+  type(context, 'SWRS');
+
+  assert.deepEqual(
+    context.elements.rows.children.map((row) => row.children[1].textContent),
+    ['SWRS1GBM'],
+  );
+});
+
+test('searching matches a Product ID exactly, not partially', () => {
+  // Ids 7 and 77, and no digits in any SKU or name, so the only thing that can
+  // match "7" is the id itself.
+  const context = run([
+    product(7, { id: '7', sku: 'AAA', name: 'Alpha' }),
+    product(8, { id: '77', sku: 'BBB', name: 'Beta' }),
+    product(9, { id: '99', sku: 'CCC', name: 'Gamma' }),
+  ]);
+  type(context, '7');
+
+  assert.deepEqual(
+    context.elements.rows.children.map((row) => row.children[2].textContent),
+    ['7'],
+    'id 77 must not match a search for 7',
+  );
+});
+
+test('search is case-insensitive and ignores surrounding space', () => {
+  for (const typed of ['BRASS', '  brass  ', 'bRaSs']) {
+    const context = run(SEARCHABLE);
+    type(context, typed);
+
+    assert.equal(context.elements.rows.children.length, 1, typed);
+  }
+});
+
+test('search and category narrow together', () => {
+  const context = run(SEARCHABLE);
+  choose(context, 'Handles');
+  type(context, 'drawer');
+
+  assert.deepEqual(
+    context.elements.rows.children.map((row) => row.children[1].textContent),
+    ['HLBK30GB'],
+  );
+  assert.match(context.elements["count-top"].textContent, /in Handles matching “drawer”/);
+});
+
+test('a search that matches nothing says so', () => {
+  const context = run(SEARCHABLE);
+  type(context, 'nothing at all');
+
+  assert.equal(context.elements.rows.children.length, 0);
+  assert.equal(context.elements.empty.hidden, false);
+  assert.equal(context.elements["count-top"].textContent, 'No products matching “nothing at all”.');
+});
+
+test('Clear Filters resets both the search and the category', () => {
+  const context = run(SEARCHABLE);
+  choose(context, 'Handles');
+  type(context, 'drawer');
+  context.elements['clear-filter'].click();
+
+  assert.equal(context.elements.rows.children.length, 2, 'back to a full page');
+  assert.equal(context.elements.search.value, '');
+  assert.equal(context.elements.category.value, '');
+});
+
+test('the search term is kept in the address so a search can be linked to', () => {
+  const context = run(SEARCHABLE);
+  type(context, 'brass');
+
+  assert.match(context.window.location.hash, /search=brass/);
+});
+
+test('a search can be opened directly from the address', () => {
+  const context = run(SEARCHABLE, '#page=1&search=Wall%20Light');
+
+  assert.equal(context.elements.search.value, 'Wall Light');
+  assert.deepEqual(
+    context.elements.rows.children.map((row) => row.children[1].textContent),
+    ['SWRS1GBM'],
+  );
+});
+
+test('pagers are hidden when everything fits on one page, but the counts stay', () => {
+  const { bars, elements } = run([product(1), product(2)]);
 
   assert.equal(bars.length, 2);
   assert.ok(bars.every((bar) => bar.hidden === true), 'one page needs no paging controls');
+
+  // The count is not inside the pager, so it still reports what is shown.
+  assert.equal(elements['count-top'].textContent, 'Showing 1–2 of 2 products in this snapshot.');
+  assert.equal(elements['count-bottom'].textContent, elements['count-top'].textContent);
 });
 
 test('control bars are shown when there is more than one page', () => {
@@ -544,5 +923,5 @@ test('an empty snapshot says so instead of drawing rows', () => {
 
   assert.equal(elements.rows.children.length, 0);
   assert.equal(elements.empty.hidden, false, 'the empty-state note is shown');
-  assert.equal(elements.count.textContent, 'No products.');
+  assert.equal(elements["count-top"].textContent, 'No products.');
 });

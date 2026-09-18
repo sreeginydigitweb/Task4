@@ -3,15 +3,15 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Product Keywords - Task 4</title>
+<title>Product Keywords</title>
 <!--
   ===========================================================================
   THE PRODUCT KEYWORDS PAGE - complete UI structure.
   ===========================================================================
 
-  This file IS the page. Doctype, head, all of the CSS, the heading, the
-  count line, both paging control bars with their buttons, and the full
-  seven-column table structure are all written out below exactly as they are
+  This file IS the page. Doctype, head, all of the CSS, the heading, both
+  paging control bars with their count line and their buttons, and the full
+  ten-column table structure are all written out below exactly as they are
   served. Read this file to understand the screen; you do not need to read
   any JavaScript to see the markup or the design.
 
@@ -21,11 +21,13 @@
 
   Slots, each written as a name in double curly braces:
 
-    count_text        "Showing 101-150 of 44,627 products."
+    count_text        "Showing 101-150 of 44,627 products." Appears TWICE,
+                      once at the left of each control bar; both are filled.
     page_position     "Page 3 of 893"
     prev_attrs        href + rel for the Previous button, or aria-disabled
     next_attrs        href + rel for the Next button, or aria-disabled
-    controls_hidden   the word "hidden" when there is only one page
+    controls_hidden   the word "hidden" when there is only one page. It sits
+                      on the PAGER, not on the bar, so the count survives.
     rows              the <tr> product rows, built from the database
     empty_message     a note shown only when a page has no rows
     category_options  the <option> list for the Categories filter
@@ -35,20 +37,72 @@
   chosen category is carried on the paging links too, which is how it survives
   a move between pages.
 
-  The product rows are the one thing not written out here: there are 44,627
+  The product rows are the one thing not written out here: there are 44,643
   products and they are read 50 at a time, so they cannot be static markup.
-  Each row is one table row of nine cells, in the column order set by the
-  table headers below. Only the first five carry a class:
+  Each row is one table row of ten cells, in the column order set by the
+  table headers below. Only the first six carry a class:
 
     td.img       an img element, or nothing at all
     td.sku       SWRS1GBM
     td.num       117
     td.name      Screwless Flat plate Wall light switches Black Round 1 Gang
     td.category  Light Switch
-    td           Light Switch
-    td           Wall Switch, Switch Plate, Black, 1 Gang
-    td           Black 1 Gang Screwless Light Switch
-    td           Light Switch Cover, Wall Plate Switch
+    td.tags      one span.ptag per PRODUCT TAG
+    td           the four keyword cells, each holding one span.kw per keyword
+
+  TWO DIFFERENT KINDS OF TAG APPEAR ON THIS PAGE. They are not related and
+  they never share a column.
+
+  1. PRODUCT TAGS - the Tags column, span.ptag.
+
+     ledsone's OWN stored tags for that product, from
+     listings.shopify_listing_tag. Free text the business recorded, such as
+     "Handles" or "Threaded Rod". Small blue pills, blue ink on a pale blue
+     ground. 19,723 of 44,643 products have at least one; the rest show a
+     genuinely empty cell rather than an invented tag. Where a product carries
+     more tags than fit, the extras are named in a "+N" pill's tooltip.
+
+  2. KEYWORD RESOURCE PILLS - inside the four keyword cells, span.tag.
+
+     Not product data at all: each names THE RESOURCE the keyword above it
+     came from. A keyword cell looks like this - the keyword as ordinary text,
+     then a small span.tag beneath it. The pill is the only coloured thing in
+     a keyword cell, and it is not a column of its own:
+
+       span.kw   Door Handle   span.tag.tag-product-type  Product Type
+       span.kw   Brass         span.tag.tag-product-name  Product Name
+
+     There are four resources, one colour each, and the colour is per RESOURCE
+     TYPE rather than per keyword:
+
+       Product Type         teal    the matched PRODUCT_TYPES entry in
+                                    keyword-generator.js. The word is written
+                                    in that map; the Product Name only selects
+                                    which entry applies.
+       Product Name         umber   the word is literally in
+                                    inventory.products.title.
+       Product Name + Type  purple  both in one phrase - Product Name words
+                                    qualifying the Product Type term, e.g.
+                                    "Vintage Brass" + "Door Handle".
+       Database             blue    a keyword value recorded in ledsone. A
+                                    recorded value wins over generation, so
+                                    the displayed word is the recorded one.
+
+     A keyword whose resource cannot be established carries NO pill rather
+     than a guessed one.
+
+     THE PILL NAMES A RESOURCE, NEVER A METHOD. There is no "GEN" and no
+     "Generated": that would say how the word was arrived at and tell the
+     reader nothing about where to go and check it. "Brass" was generated, but
+     it CAME FROM the Product Name, so the pill reads Product Name.
+
+     ledsone records no keyword category today, so pills currently read
+     Product Type, Product Name or Product Name + Type. Database appears as
+     soon as a recorded keyword source is wired into the `recorded` seam.
+
+  So "Handles" in the Tags column and "Product Type" under a keyword are
+  different things: the first is the business's own product data, the second
+  names where this application took a keyword's wording from.
 
   A keyword the product name cannot support is an empty cell rather than
   placeholder text, and every value is HTML-escaped before it reaches the page.
@@ -81,6 +135,26 @@
   --muted: #5b6672;
   --line: #d8dee6;
   --accent: #1f4f82;
+  /* Keyword RESOURCE pills. Inside a KEYWORD cell these are the only coloured
+     thing - the keywords themselves stay ordinary dark body text. Each is a
+     background behind white label text, so each is dark enough to read.
+
+     One colour per RESOURCE TYPE, never per keyword: every "Product Type"
+     pill on the page is the same colour, so the reader learns the four
+     colours once. The pill names WHERE the word came from - it is never
+     "GEN", and never "Generated", which would name a method rather than a
+     resource. */
+  --tag-product-type: #0f6b5f;       /* teal   - the Product Type entry */
+  --tag-product-name: #8a4b12;       /* umber  - inventory.products.title */
+  --tag-product-name-type: #6b3fa0;  /* purple - both, in one phrase */
+  --tag-database: #1b5e9c;           /* blue   - recorded in ledsone */
+  /* PRODUCT tag pills - a different thing entirely from the three above, and
+     in their own column. These carry ledsone's own stored tags ("Handles",
+     "Threaded Rod"), not keyword provenance: blue ink on a pale blue ground,
+     so they never read as a keyword resource pill. */
+  --ptag-bg: #e4eefa;
+  --ptag-ink: #14507f;
+  --ptag-line: #c2d9ef;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -90,6 +164,15 @@
     --muted: #9aa5b1;
     --line: #2e353e;
     --accent: #7fb0e6;
+    /* Slightly brighter pills on the dark ground; the label stays white. */
+    --tag-product-type: #14806f;
+    --tag-product-name: #a85c18;
+    --tag-product-name-type: #7a4cae;
+    --tag-database: #2d6fae;
+    /* Product tags invert: pale blue ink on a deep blue ground. */
+    --ptag-bg: #1b3552;
+    --ptag-ink: #9cc6ec;
+    --ptag-line: #2c4f73;
   }
 }
 * { box-sizing: border-box; }
@@ -121,32 +204,118 @@ h1 { font-size: 26px; font-weight: 600; margin: 0 0 12px; }
 .notice h2 { font-size: 14px; margin: 0 0 6px; }
 .notice p { margin: 0 0 6px; color: var(--muted); }
 .notice p:last-child { margin-bottom: 0; }
-/* Category filter. A plain form; the server does the filtering. */
-.filter { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; font-size: 13px; }
-.filter label { color: var(--muted); }
+/* Filter card. A plain form; the server does the filtering. */
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: flex-end;
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  font-size: 13px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.filter .field { display: flex; flex-direction: column; gap: 5px; }
+.filter .field.actions { flex-direction: row; gap: 8px; align-items: center; }
+.filter label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.filter input,
 .filter select {
   font: inherit;
-  padding: 5px 8px;
-  max-width: 34ch;
+  padding: 7px 10px;
   color: var(--ink);
-  background: var(--panel);
+  background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 6px;
 }
+.filter input { width: 34ch; max-width: 100%; }
+.filter select { max-width: 34ch; }
+.filter input:focus, .filter select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
 .filter .btn {
   font: inherit;
-  padding: 5px 12px;
+  padding: 7px 14px;
   color: var(--accent);
-  background: var(--panel);
+  background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: 6px;
   text-decoration: none;
   cursor: pointer;
+  white-space: nowrap;
 }
+.filter .btn-primary { color: #fff; background: var(--accent); border-color: var(--accent); }
 .filter .btn:hover { border-color: var(--accent); }
 .filter .btn[hidden] { display: none; }
 td.category { min-width: 14ch; max-width: 24ch; }
-.count { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+
+/* PRODUCT TAGS - ledsone's own stored tags, in their own column.
+
+   Small compact blue pills, wrapped, with space between them. These are NOT
+   the keyword RESOURCE pills below: those are solid, white-on-dark, name one
+   of four resources, and live inside the keyword cells. These carry free
+   product text and are the only thing in this column. */
+td.tags { min-width: 16ch; max-width: 26ch; }
+.ptag {
+  display: inline-block;
+  margin: 0 4px 4px 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ptag-ink);
+  background: var(--ptag-bg);
+  border: 1px solid var(--ptag-line);
+  white-space: nowrap;
+}
+/* The overflow pill. A product can carry over a hundred tags, which would make
+   one row taller than the screen, so the rest are named in its tooltip rather
+   than dropped: the data is all here, the column just stays readable. */
+.ptag-more { cursor: help; }
+
+/* Keywords and their RESOURCE pills.
+
+   The keyword itself is ORDINARY TEXT: it inherits the body colour and has no
+   background, no border and no chip. Each keyword sits on its own line with a
+   small pill below it NAMING THE RESOURCE the word came from, and the pill is
+   the only coloured thing here. There is no separate source column. */
+.kw { display: block; }
+.kw + .kw { margin-top: 8px; }
+/* The keyword: ordinary dark body text, on its own line. */
+.kw .term { display: block; color: var(--ink); }
+/* The resource pill: small and compact, on the line BELOW the keyword, and the
+   only coloured thing in the cell. inline-block so the pill hugs its own label
+   rather than stretching across the column; it still starts a new line,
+   because the keyword above it is a block.
+
+   The label is a resource NAME ("Product Type"), not a three-letter code, so
+   the letter-spacing is tight enough for real words to read as one pill. */
+.tag {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .02em;
+  line-height: 1.6;
+  white-space: nowrap;
+  color: #fff;
+  cursor: help;
+}
+/* One class per RESOURCE, one colour each. A keyword whose resource cannot be
+   established gets no pill at all, so there is no "unknown" colour. */
+.tag-product-type { background: var(--tag-product-type); }
+.tag-product-name { background: var(--tag-product-name); }
+.tag-product-name-type { background: var(--tag-product-name-type); }
+.tag-database { background: var(--tag-database); }
+.count { color: var(--muted); font-size: 14px; margin: 0; }
 .scroll-hint { color: var(--muted); font-size: 12px; margin: 0 0 6px; }
 .table-scroll { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; }
 table { border-collapse: collapse; width: 100%; font-size: 13px; }
@@ -170,9 +339,21 @@ td.sku { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; 
 td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 td.name { min-width: 26ch; max-width: 40ch; }
 /* Paging controls. The same bar is rendered above and below the table; both
-   are plain links to ?page=N, so both always describe the one current page. */
-.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 10px 0; }
+   are plain links to ?page=N, so both always describe the one current page.
+
+   The bar is one flex row with the product count at the LEFT end and the
+   Previous / page / Next group pushed to the RIGHT end by space-between:
+
+     Showing 1-50 of 44,643 products.        <- Previous  Page 1 of 893  Next ->
+
+   The count is the bar's first child and the pager its last, so that holds
+   whichever of the two is hidden. On a narrow screen the row wraps and the
+   pager drops below the count rather than overflowing. */
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 12px 0; }
 .controls-top { margin-top: 0; }
+/* Only the pager is hidden on a single-page result; the count still reports
+   what is being shown, so the line never disappears. */
+.pager[hidden] { display: none; }
 .pager { display: flex; gap: 8px; align-items: center; font-size: 13px; }
 .pager .btn {
   display: inline-block;
@@ -200,32 +381,44 @@ footer { margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--line);
     <!-- ================= PAGE HEADING ================= -->
     <h1>Product Keywords</h1>
 
-    <!-- ================= CATEGORY FILTER =================
-         An ordinary GET form: choosing a category and pressing Filter reloads
-         the page with ?category=... The server does the filtering, so this
-         needs no JavaScript. The option list and the current selection are
-         filled in from the database; "All Categories" is the empty value,
-         which the server reads as no filter. -->
+    <!-- ================= FILTER CARD =================
+         An ordinary GET form: Search and Categories reload the page with
+         ?search=...&category=... The server does the filtering, so this needs
+         no JavaScript. The option list and both current values are filled in
+         from the database; "All Categories" is the empty value, which the
+         server reads as no filter. -->
     <form class="filter" method="get" action="/product-keywords">
-      <label for="category">Categories</label>
-      <select name="category" id="category">{{category_options}}</select>
-      <button type="submit" class="btn">Filter</button>
-      <a class="btn" href="/product-keywords"{{clear_hidden}}>Clear</a>
+      <div class="field">
+        <label for="search">Search</label>
+        <input type="search" name="search" id="search" value="{{search_value}}"
+               placeholder="Search by SKU, Product ID or name..." autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="category">Categories</label>
+        <select name="category" id="category">{{category_options}}</select>
+      </div>
+      <div class="field actions">
+        <button type="submit" class="btn btn-primary">Apply</button>
+        <a class="btn" href="/product-keywords"{{clear_hidden}}>Clear Filters</a>
+      </div>
     </form>
 
-    <!-- ================= COUNT AREA =================
-         Dynamic product count, e.g. "Showing 101-150 of 44,627 products."
-         It reports the count for the chosen category, not the whole
-         catalogue. -->
-    <p class="count">{{count_text}}</p>
-
     <!-- ================= TOP CONTROLS / PAGINATION =================
-         Buttons are plain links to ?page=N. The prev_attrs and next_attrs
+         One bar, two ends.
+
+         LEFT  - the dynamic product count, e.g.
+                 "Showing 101-150 of 44,627 products." It reports the count for
+                 the chosen category and search, not the whole catalogue.
+         RIGHT - Previous / Page N of M / Next.
+
+         The buttons are plain links to ?page=N. The prev_attrs and next_attrs
          slots become href + rel when there is a page to go to, and
          aria-disabled when there is not, which greys the button out and makes
-         it inert. The whole bar is hidden when everything fits on one page. -->
-    <div class="controls controls-top"{{controls_hidden}}>
-      <nav class="pager" aria-label="Pagination top">
+         it inert. When everything fits on one page the PAGER is hidden and the
+         count stays, so the line never vanishes. -->
+    <div class="controls controls-top">
+      <p class="count">{{count_text}}</p>
+      <nav class="pager" aria-label="Pagination top"{{controls_hidden}}>
         <a class="btn" {{prev_attrs}}>&larr; Previous</a>
         <span class="here">{{page_position}}</span>
         <a class="btn" {{next_attrs}}>Next &rarr;</a>
@@ -233,7 +426,8 @@ footer { margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--line);
     </div>
 
     <!-- ================= PRODUCT KEYWORD TABLE =================
-         Seven columns, in the required order. -->
+         Ten columns, in the required order. There is no source/provenance
+         column: the RESOURCE pill sits underneath its own keyword. -->
     <div class="table-scroll">
       <table>
         <thead>
@@ -243,6 +437,7 @@ footer { margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--line);
             <th>Product ID</th>
             <th>Product Name</th>
             <th>Category</th>
+            <th>Tags</th>
             <th>Primary Keyword</th>
             <th>Secondary Keywords</th>
             <th>Long-Tail Keywords</th>
@@ -251,7 +446,7 @@ footer { margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--line);
         </thead>
         <tbody>
           <!-- Dynamic product rows inserted here: one table row per product,
-               seven cells each, in the column order above. The cell classes
+               ten cells each, in the column order above. The cell classes
                are listed at the top of this file. -->
 {{rows}}
         </tbody>
@@ -263,10 +458,12 @@ footer { margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--line);
 {{empty_message}}
 
     <!-- ================= BOTTOM CONTROLS / PAGINATION =================
-         The same bar as the top one, so a long page does not have to be
-         scrolled back up. Both bars link to the same pages. -->
-    <div class="controls controls-bottom"{{controls_hidden}}>
-      <nav class="pager" aria-label="Pagination bottom">
+         The same bar as the top one - count at the LEFT, pager at the RIGHT -
+         so a long page does not have to be scrolled back up. Both bars link to
+         the same pages and report the same count. -->
+    <div class="controls controls-bottom">
+      <p class="count">{{count_text}}</p>
+      <nav class="pager" aria-label="Pagination bottom"{{controls_hidden}}>
         <a class="btn" {{prev_attrs}}>&larr; Previous</a>
         <span class="here">{{page_position}}</span>
         <a class="btn" {{next_attrs}}>Next &rarr;</a>

@@ -12,7 +12,8 @@
  *     exactly like the live page and there is one place to restyle both)
  *   - all of the JavaScript, inline - paging and row rendering
  *   - the product data, embedded as JSON
- *   - all eight columns, Product Image first
+ *   - all ten columns, Product Image first, including ledsone's own stored
+ *     Product Tags
  *
  * No server, no database, no separate .js or .css file, no framework, no CDN
  * script. Opening the file is enough.
@@ -27,7 +28,7 @@
  * added there would be dead code that the browser refuses to run.
  *
  * So the live page stays script-free and database-backed, and this snapshot is
- * the shareable single file. Both render the same eight columns from the same
+ * the shareable single file. Both render the same ten columns from the same
  * CSS and the same keyword logic.
  *
  * ---------------------------------------------------------------------------
@@ -66,7 +67,11 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { closePool } from './db.js';
-import { PAGE_SIZE, classifyKeywords, countProducts, findProductKeywordPage } from './source.js';
+import { RESOURCE_DESCRIPTION, RESOURCE_LABEL } from './keyword-generator.js';
+// The product-tag overflow threshold, taken from the live renderer so the two
+// cannot disagree about how many pills a cell draws.
+import { TAGS_SHOWN } from './render.js';
+import { PAGE_SIZE, classifyKeywordTerms, countProducts, findProductKeywordPage } from './source.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PROJECT = resolve(HERE, '..');
@@ -164,11 +169,17 @@ export function serialiseData(data) {
  * Keyword values come from the application's own classifier, unchanged - the
  * snapshot shows the same keywords as the live page, from the same code.
  *
- * @param {{id: number, sku: string, title: string, image: string|null}} product
- * @returns {{image: string|null, sku: string, id: string, name: string, primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}}
+ * @param {{id: number, sku: string, title: string, image: string|null, category?: string|null, tags?: string[]}} product
+ * @returns {{image: string|null, sku: string, id: string, name: string, category: string|null, tags: string[], primary: object[], secondary: object[], longTail: object[], competitor: object[]}}
  */
 export function toSnapshotRow(product) {
-  const keywords = classifyKeywords(product.title);
+  // Each category as its individual keywords, with the RESOURCE each came
+  // from. The keyword VALUES are the application's own, unchanged.
+  const keywords = classifyKeywordTerms(product.title);
+  // t = the keyword, r = the resource it came from ('product-type',
+  // 'product-name', 'product-name-type', 'database', or null when unproven,
+  // in which case the cell shows no pill).
+  const terms = (name) => keywords[name].map(({ term, resource }) => ({ t: term, r: resource }));
 
   return {
     image: typeof product.image === 'string' && product.image.trim() !== '' ? product.image.trim() : null,
@@ -178,10 +189,19 @@ export function toSnapshotRow(product) {
     // ledsone's own category, else one derived from the product name, else
     // null for a blank cell. Resolved by source.js; see categories.js.
     category: typeof product.category === 'string' && product.category.trim() !== '' ? product.category.trim() : null,
-    primary: keywords.primary,
-    secondary: keywords.secondary,
-    longTail: keywords.longTail,
-    competitor: keywords.competitor,
+    // ledsone's OWN stored product tags, every one the database holds for this
+    // product - not a sample, and not derived from anything. An empty array
+    // where the business recorded none; the cell is then blank. These are not
+    // the keyword RESOURCE pills carried in `r` below.
+    tags: Array.isArray(product.tags)
+      ? product.tags
+          .filter((tag) => typeof tag === 'string' && tag.trim() !== '')
+          .map((tag) => tag.trim())
+      : [],
+    primary: terms('primary'),
+    secondary: terms('secondary'),
+    longTail: terms('longTail'),
+    competitor: terms('competitor'),
   };
 }
 
@@ -230,13 +250,16 @@ var PAGE_SIZE = ${Number(pageSize)};
 var ROWS = JSON.parse(document.getElementById('snapshot-data').textContent);
 var current = 1;
 var category = '';        /* '' means All Categories */
-var visible = ROWS;       /* the rows the filter leaves */
+var search = '';          /* '' means no search */
+var visible = ROWS;       /* the rows the filters leave */
 var PAGE_COUNT = 1;
 
 var tbody = document.getElementById('rows');
-var countLine = document.getElementById('count');
+/* The count appears at the LEFT of both control bars, so both are written. */
+var countLines = [document.getElementById('count-top'), document.getElementById('count-bottom')];
 var empty = document.getElementById('empty');
 var picker = document.getElementById('category');
+var box = document.getElementById('search');
 
 /* Only a real web address may become an image source. A data:, javascript: or
    relative value is treated as no image, exactly as the live page does. */
@@ -249,6 +272,83 @@ function cell(text, className) {
   if (className) td.className = className;
   /* textContent, not innerHTML: product text is text. */
   if (text !== null && text !== undefined) td.textContent = String(text);
+  return td;
+}
+
+/* How many PRODUCT tag pills a cell draws before the rest go into a "+N" pill.
+   Every tag is in the data and every one is reachable - the overflow pill
+   names the remainder in its tooltip. This only stops a product with a hundred
+   tags making a row taller than the screen. */
+var TAGS_SHOWN = ${Number(TAGS_SHOWN)};
+
+/* The PRODUCT TAGS cell: ledsone's own stored tags, as small blue pills.
+   Different data from the keyword RESOURCE pills below, and in its own
+   column. A product with none gets a genuinely empty cell. */
+function tagsCell(tags) {
+  var td = document.createElement('td');
+  td.className = 'tags';
+  if (!tags || !tags.length) return td;
+
+  tags.slice(0, TAGS_SHOWN).forEach(function (tag) {
+    var pill = document.createElement('span');
+    pill.className = 'ptag';
+    /* textContent: a tag is product text and is never parsed as markup. */
+    pill.textContent = tag;
+    td.appendChild(pill);
+  });
+
+  var rest = tags.slice(TAGS_SHOWN);
+  if (rest.length) {
+    var more = document.createElement('span');
+    more.className = 'ptag ptag-more';
+    more.title = rest.join(', ');
+    more.textContent = '+' + rest.length.toLocaleString('en-GB');
+    td.appendChild(more);
+  }
+
+  return td;
+}
+
+/* The RESOURCE each keyword came from: its pill text, and its tooltip. Both
+   are filled in at build time from the application's own lists, so this file
+   cannot name a resource differently from the live page.
+
+   A resource is a PLACE ("Product Type", "Product Name", "Database"), never a
+   method. There is no "GEN" and no "Generated" here by design. */
+var RESOURCE_LABEL = ${serialiseData(RESOURCE_LABEL)};
+var RESOURCE_TITLE = ${serialiseData(RESOURCE_DESCRIPTION)};
+
+/* A keyword cell: each keyword as ordinary text on its own line, with a small
+   coloured pill below it naming the resource it came from. The keyword itself
+   gets no colour and no background; only the pill is coloured. */
+function keywordCell(terms) {
+  var td = document.createElement('td');
+  if (!terms || !terms.length) return td;
+
+  terms.forEach(function (entry) {
+    var line = document.createElement('span');
+    line.className = 'kw';
+
+    /* The keyword, as text - never parsed as markup - on its own line. */
+    var word = document.createElement('span');
+    word.className = 'term';
+    word.textContent = entry.t;
+    line.appendChild(word);
+
+    /* The resource pill goes on the line BELOW the keyword. A keyword whose
+       resource could not be established carries NO pill rather than a guessed
+       one. */
+    if (RESOURCE_LABEL[entry.r]) {
+      var tag = document.createElement('span');
+      tag.className = 'tag tag-' + entry.r;
+      tag.title = RESOURCE_TITLE[entry.r] || RESOURCE_LABEL[entry.r];
+      tag.textContent = RESOURCE_LABEL[entry.r];
+      line.appendChild(tag);
+    }
+
+    td.appendChild(line);
+  });
+
   return td;
 }
 
@@ -284,23 +384,27 @@ function drawRows(page) {
     tr.appendChild(cell(row.id, 'num'));
     tr.appendChild(cell(row.name, 'name'));
     tr.appendChild(cell(row.category, 'category'));
-    tr.appendChild(cell(row.primary));
-    tr.appendChild(cell(row.secondary));
-    tr.appendChild(cell(row.longTail));
-    tr.appendChild(cell(row.competitor));
+    tr.appendChild(tagsCell(row.tags));
+    tr.appendChild(keywordCell(row.primary));
+    tr.appendChild(keywordCell(row.secondary));
+    tr.appendChild(keywordCell(row.longTail));
+    tr.appendChild(keywordCell(row.competitor));
     fragment.appendChild(tr);
   });
 
   tbody.appendChild(fragment);
   empty.hidden = slice.length > 0;
 
-  var where = category === '' ? '' : ' in ' + category;
+  var where = (category === '' ? '' : ' in ' + category) +
+    (search === '' ? '' : ' matching \\u201c' + search + '\\u201d');
 
-  countLine.textContent = slice.length === 0
+  var text = slice.length === 0
     ? 'No products' + where + '.'
     : 'Showing ' + (first + 1).toLocaleString('en-GB') + '\\u2013' +
       (first + slice.length).toLocaleString('en-GB') + ' of ' +
       visible.length.toLocaleString('en-GB') + ' products' + where + ' in this snapshot.';
+
+  countLines.forEach(function (line) { if (line) line.textContent = text; });
 }
 
 function drawControls(page) {
@@ -317,22 +421,38 @@ function drawControls(page) {
     next.setAttribute('aria-disabled', String(page >= PAGE_COUNT));
   });
 
-  document.querySelectorAll('.controls').forEach(function (bar) {
-    bar.hidden = PAGE_COUNT <= 1;
+  /* Only the PAGER is hidden on a one-page result, not the whole bar - the
+     count at the left of each bar must keep reporting what is shown. */
+  document.querySelectorAll('.pager').forEach(function (pager) {
+    pager.hidden = PAGE_COUNT <= 1;
   });
 }
 
-/* Apply the chosen category. Paging always restarts at page 1, because page 7
-   of everything is not page 7 of one category. */
-function filterTo(next, page) {
-  category = typeof next === 'string' ? next : '';
+/* Does one product match the search box? SKU and name match on any part;
+   Product ID matches exactly, so searching "2" does not return every id
+   containing a 2. */
+function matchesSearch(row, needle) {
+  if (needle === '') return true;
 
-  visible = category === ''
-    ? ROWS
-    : ROWS.filter(function (row) { return row.category === category; });
+  var lower = needle.toLowerCase();
+  return String(row.sku || '').toLowerCase().indexOf(lower) !== -1 ||
+    String(row.name || '').toLowerCase().indexOf(lower) !== -1 ||
+    String(row.id || '') === needle;
+}
+
+/* Apply the chosen filters. Paging always restarts at page 1, because page 7
+   of everything is not page 7 of one category. */
+function filterTo(nextCategory, nextSearch, page) {
+  category = typeof nextCategory === 'string' ? nextCategory : '';
+  search = typeof nextSearch === 'string' ? nextSearch.trim() : '';
+
+  visible = ROWS.filter(function (row) {
+    return (category === '' || row.category === category) && matchesSearch(row, search);
+  });
 
   PAGE_COUNT = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   if (picker && picker.value !== category) picker.value = category;
+  if (box && box.value !== search) box.value = search;
 
   show(page || 1);
 }
@@ -345,7 +465,8 @@ function show(page) {
      so the chosen category survives a reload. */
   if (window.history && window.history.replaceState) {
     window.history.replaceState(null, '', '#page=' + current +
-      (category === '' ? '' : '&category=' + encodeURIComponent(category)));
+      (category === '' ? '' : '&category=' + encodeURIComponent(category)) +
+      (search === '' ? '' : '&search=' + encodeURIComponent(search)));
   }
 }
 
@@ -369,15 +490,22 @@ document.addEventListener('keydown', function (event) {
 
 if (picker) {
   picker.addEventListener('change', function () {
-    filterTo(picker.value, 1);
+    filterTo(picker.value, search, 1);
     window.scrollTo(0, 0);
   });
+}
+
+if (box) {
+  /* Filters as you type - there is no server to ask, so there is nothing to
+     wait for. */
+  box.addEventListener('input', function () { filterTo(category, box.value, 1); });
+  box.addEventListener('search', function () { filterTo(category, box.value, 1); });
 }
 
 var clear = document.getElementById('clear-filter');
 if (clear) {
   clear.addEventListener('click', function () {
-    filterTo('', 1);
+    filterTo('', '', 1);
     window.scrollTo(0, 0);
   });
 }
@@ -386,27 +514,39 @@ if (clear) {
 var hash = window.location.hash || '';
 var wantedPage = parseInt((hash.match(/page=(\\d+)/) || [])[1], 10);
 var wantedCategory = (hash.match(/category=([^&]*)/) || [])[1];
+var wantedSearch = (hash.match(/search=([^&]*)/) || [])[1];
 
-try {
-  wantedCategory = wantedCategory ? decodeURIComponent(wantedCategory) : '';
-} catch (error) {
-  wantedCategory = '';
+function decode(value) {
+  try {
+    return value ? decodeURIComponent(value) : '';
+  } catch (error) {
+    return '';
+  }
 }
+
+wantedCategory = decode(wantedCategory);
+wantedSearch = decode(wantedSearch);
 
 /* A category the file does not hold is treated as no filter, not an error. */
 var known = ROWS.some(function (row) { return row.category === wantedCategory; });
 
-filterTo(known ? wantedCategory : '', Number.isFinite(wantedPage) ? wantedPage : 1);
+filterTo(known ? wantedCategory : '', wantedSearch, Number.isFinite(wantedPage) ? wantedPage : 1);
 `.trim();
 }
 
-/** The eight columns, in the order the requirement sets. */
+/**
+ * The ten columns, in the order the requirement sets.
+ *
+ * There is deliberately no source/provenance column: a keyword's RESOURCE pill
+ * sits underneath the keyword itself, inside its own cell.
+ */
 export const COLUMNS = Object.freeze([
   'Product Image',
   'SKU',
   'Product ID',
   'Product Name',
   'Category',
+  'Tags',
   'Primary Keyword',
   'Secondary Keywords',
   'Long-Tail Keywords',
@@ -443,6 +583,8 @@ export function buildSnapshotHtml({
 
   const categories = categoriesIn(rows);
   const withCategory = categories.reduce((sum, { count }) => sum + count, 0);
+  const withTags = rows.filter((row) => Array.isArray(row.tags) && row.tags.length > 0).length;
+  const tagCount = rows.reduce((sum, row) => sum + (Array.isArray(row.tags) ? row.tags.length : 0), 0);
 
   const headers = COLUMNS.map((name) => `            <th>${escapeHtml(name)}</th>`).join('\n');
 
@@ -455,8 +597,12 @@ export function buildSnapshotHtml({
     ),
   ].join('');
 
-  const controls = (place) => `    <div class="controls controls-${place}" hidden>
-      <nav class="pager" aria-label="Pagination ${place}">
+  // One bar, two ends: the product count at the LEFT, the Previous / page /
+  // Next group at the RIGHT. Same arrangement above and below the table. The
+  // `hidden` starts on the PAGER alone, so the count is never hidden with it.
+  const controls = (place) => `    <div class="controls controls-${place}">
+      <p class="count" id="count-${place}"></p>
+      <nav class="pager" aria-label="Pagination ${place}" hidden>
         <button type="button" class="btn" id="prev-${place}">&larr; Previous</button>
         <span class="here" id="position-${place}"></span>
         <button type="button" class="btn" id="next-${place}">Next &rarr;</button>
@@ -468,7 +614,7 @@ export function buildSnapshotHtml({
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Product Keywords - snapshot ${escapeHtml(when)}</title>
+<title>Product Keywords</title>
 <!--
   ===========================================================================
   PRODUCT KEYWORDS - SELF-CONTAINED SNAPSHOT
@@ -508,6 +654,20 @@ export function buildSnapshotHtml({
   ledsone's own recorded one where it has one, otherwise the product type the
   product name itself states. The filter above the table works entirely inside
   this file.
+
+  Product tags: ${tagCount.toLocaleString('en-GB')} in total across ${withTags.toLocaleString('en-GB')} of these products;
+  ${(rows.length - withTags).toLocaleString('en-GB')} have none and show a blank Tags cell. EVERY tag ledsone holds
+  for EVERY product in this file is carried in the data below - no product is
+  sampled and no tag list is truncated in the data. They are the business's own
+  stored tags from listings.shopify_listing_tag, reached through the listing
+  that carries the SKU and that listing's parent; nothing here derives, guesses
+  or invents a tag. A cell draws the first ${Number(TAGS_SHOWN)} as pills and names any remainder
+  in a "+N" pill's tooltip, so a product with a hundred tags cannot make one
+  row taller than the screen.
+
+  These PRODUCT TAGS are a different thing from the RESOURCE pills under each
+  keyword: the first is ledsone's own product data, the second names where
+  this application took a keyword's wording from.
 -->
 <style>
 ${styles}
@@ -536,25 +696,31 @@ button.btn:disabled { color: var(--muted); opacity: .55; cursor: default; border
       connection and no credentials. Rebuild with <code>npm run snapshot</code>.
     </p>
 
-    <!-- ================= CATEGORY FILTER =================
+    <!-- ================= FILTER CARD =================
          Filters the embedded rows in the browser. There is no server here, so
-         choosing a category re-draws the table from the data already in this
-         file. Counts are for this snapshot, not the whole catalogue. -->
+         searching or choosing a category re-draws the table from the data
+         already in this file. Counts are for this snapshot, not the whole
+         catalogue. -->
     <div class="filter">
-      <label for="category">Categories</label>
-      <select id="category">${options}</select>
-      <button type="button" class="btn" id="clear-filter">Clear</button>
+      <div class="field">
+        <label for="search">Search</label>
+        <input type="search" id="search" placeholder="Search by SKU, Product ID or name..." autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="category">Categories</label>
+        <select id="category">${options}</select>
+      </div>
+      <div class="field actions">
+        <button type="button" class="btn" id="clear-filter">Clear Filters</button>
+      </div>
     </div>
-
-    <!-- ================= COUNT AREA =================
-         Filled by the inline script from the embedded data. It reports the
-         count for the chosen category. -->
-    <p class="count" id="count"></p>
 
 ${controls('top')}
 
     <!-- ================= PRODUCT KEYWORD TABLE =================
-         Eight columns, in the required order. -->
+         Ten columns, in the required order. The Tags column carries ledsone's
+         own stored product tags; there is no separate source column, because a
+         keyword's RESOURCE pill sits underneath the keyword itself. -->
     <div class="table-scroll">
       <table>
         <thead>
@@ -564,7 +730,7 @@ ${headers}
         </thead>
         <tbody id="rows">
           <!-- Rows are drawn here by the inline script, from the embedded
-               JSON below. One table row per product, eight cells each. -->
+               JSON below. One table row per product, ten cells each. -->
         </tbody>
       </table>
     </div>

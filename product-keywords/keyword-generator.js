@@ -418,19 +418,162 @@ export function matchProductType(title) {
 }
 
 /**
- * Generate the four search categories from a product name alone.
+ * The inputs a keyword can come from.
  *
- * A name with no recognised terminology still yields its own concise phrase
- * and any attribute words it contains; it yields no synonyms and no
- * alternative wording, because guessing those would need a product type this
- * file does not have. Those cells stay blank.
+ * Every keyword the page shows carries one of these, so "generated" is never a
+ * shrug: it names the thing that produced the word.
+ */
+export const INPUT = Object.freeze({
+  /** Taken whole from PRODUCT_TYPES above - a curated synonym for the type. */
+  TERMINOLOGY: 'terminology',
+  /** A word read literally out of inventory.products.title. */
+  PRODUCT_NAME: 'product-name',
+  /** A shortened phrase of the product name itself. */
+  TITLE_PHRASE: 'title-phrase',
+  /** Product-name words qualifying a terminology term. */
+  COMPOSITE: 'composite',
+  /** Recorded in ledsone. */
+  DATABASE: 'database',
+  /** Recorded in ledsone AND produced by generation. */
+  BOTH: 'database+generated',
+});
+
+/** What each input is, in words, for the page and for the reader. */
+export const INPUT_DESCRIPTION = Object.freeze({
+  [INPUT.TERMINOLOGY]: 'Generated: product-type terminology selected by the Product Name',
+  [INPUT.PRODUCT_NAME]: 'Generated: a word taken from the Product Name',
+  [INPUT.TITLE_PHRASE]: 'Generated: a shortened phrase of the Product Name',
+  [INPUT.COMPOSITE]: 'Generated: Product Name words qualifying the product type',
+  [INPUT.DATABASE]: 'Recorded in the ledsone database',
+  [INPUT.BOTH]: 'Recorded in ledsone and also produced by generation',
+});
+
+/**
+ * ===========================================================================
+ * THE RESOURCE A KEYWORD CAME FROM.
+ * ===========================================================================
+ *
+ * An INPUT above says HOW a term was arrived at. A RESOURCE says WHERE the
+ * word itself came from - which is the thing the page shows. They are not the
+ * same question, and the page answers the second one:
+ *
+ *   "Brass" was GENERATED, but it came from the PRODUCT NAME.
+ *   "Door Pull" was GENERATED, but it came from the PRODUCT TYPE entry.
+ *
+ * So the page never labels a keyword "generated". "Generated" is a method, not
+ * a resource, and naming the method tells the reader nothing about where to go
+ * and check the word.
+ *
+ * There are exactly four resources, and each is a real, inspectable place:
+ *
+ *   PRODUCT_TYPE   the matched PRODUCT_TYPES entry in this file. The word is
+ *                  written in the map; the Product Name only SELECTS which
+ *                  entry applies. Covers primary, secondary synonyms,
+ *                  competitor wording and the fallback long-tail.
+ *
+ *   PRODUCT_NAME   inventory.products.title. The word is literally in the
+ *                  product's own name and was read out of it.
+ *
+ *   PRODUCT_NAME_AND_TYPE
+ *                  both, in one phrase: Product Name words qualifying the
+ *                  Product Type term, e.g. "Vintage Brass" + "Door Handle".
+ *                  Naming only one of the two would be wrong.
+ *
+ *   DATABASE       a keyword value recorded in ledsone and passed in through
+ *                  the `recorded` seam. When one exists it WINS - see
+ *                  resolveKeywordCategories - so the displayed word came from
+ *                  the database, whatever the generator would also have said.
+ *
+ * NOT a resource, deliberately: Amazon, eBay, Google and Search Console.
+ * ledsone does hold real keyword data for those platforms, but this
+ * application does not read it, so no keyword on this page came from them.
+ * Labelling one "Amazon" because Amazon happens to hold the same word would be
+ * inventing a provenance the code cannot support. When such a source is wired
+ * into the `recorded` seam, it gets its own resource here and its own pill.
+ */
+export const RESOURCE = Object.freeze({
+  PRODUCT_TYPE: 'product-type',
+  PRODUCT_NAME: 'product-name',
+  PRODUCT_NAME_AND_TYPE: 'product-name-type',
+  DATABASE: 'database',
+});
+
+/** The pill text. The resource's name - never a method, never "GEN". */
+export const RESOURCE_LABEL = Object.freeze({
+  [RESOURCE.PRODUCT_TYPE]: 'Product Type',
+  [RESOURCE.PRODUCT_NAME]: 'Product Name',
+  [RESOURCE.PRODUCT_NAME_AND_TYPE]: 'Product Name + Type',
+  [RESOURCE.DATABASE]: 'Database',
+});
+
+/** The pill's tooltip: where to go and check the word. */
+export const RESOURCE_DESCRIPTION = Object.freeze({
+  [RESOURCE.PRODUCT_TYPE]:
+    'From the Product Type entry in keyword-generator.js, selected by the Product Name',
+  [RESOURCE.PRODUCT_NAME]: 'From the Product Name (inventory.products.title)',
+  [RESOURCE.PRODUCT_NAME_AND_TYPE]:
+    'Product Name words qualifying the Product Type term',
+  [RESOURCE.DATABASE]: 'Recorded as a keyword value in the ledsone database',
+});
+
+/**
+ * Which resource each input draws its words from.
+ *
+ * TITLE_PHRASE is PRODUCT_NAME because a shortened title phrase is the product
+ * name and nothing else. BOTH is DATABASE because a recorded value wins over
+ * generation, so the word on screen is the recorded one.
+ */
+const RESOURCE_OF_INPUT = Object.freeze({
+  [INPUT.TERMINOLOGY]: RESOURCE.PRODUCT_TYPE,
+  [INPUT.PRODUCT_NAME]: RESOURCE.PRODUCT_NAME,
+  [INPUT.TITLE_PHRASE]: RESOURCE.PRODUCT_NAME,
+  [INPUT.COMPOSITE]: RESOURCE.PRODUCT_NAME_AND_TYPE,
+  [INPUT.DATABASE]: RESOURCE.DATABASE,
+  [INPUT.BOTH]: RESOURCE.DATABASE,
+});
+
+/**
+ * The resource behind one input, or null when the input proves nothing.
+ *
+ * Null rather than a default: an unprovable origin gets NO pill. Picking one
+ * would be inventing provenance.
+ *
+ * @param {string|null|undefined} input
+ * @returns {string|null}
+ */
+export function resourceForInput(input) {
+  return RESOURCE_OF_INPUT[input] ?? null;
+}
+
+/**
+ * Generate the four categories as individual keywords, each with the input
+ * that produced it.
+ *
+ * THIS IS THE GENERATOR. `generateKeywordsFromTitle` below joins what this
+ * returns, so the strings and the provenance cannot drift apart - there is one
+ * implementation, not two.
+ *
+ * Two different inputs produce a generated keyword, and the difference is
+ * real:
+ *
+ *   TERMINOLOGY   the term is a curated synonym held in PRODUCT_TYPES above.
+ *                 The Product Name SELECTS the entry (by pattern), but the
+ *                 word itself comes from this file. "Door Pull" is one of
+ *                 these: the name says "Door Handle", and the map supplies
+ *                 "Door Pull" as a synonym for that type.
+ *
+ *   PRODUCT_NAME  the term is a word literally present in the title, found by
+ *                 productAttributes. "Brass" and "Vintage" are these.
+ *
+ * Neither is read from a database, and neither is a guess: both are recorded
+ * here so the page can say which produced a given keyword.
  *
  * @param {unknown} title
- * @returns {{primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}}
+ * @returns {{primary: Array<{term: string, input: string}>, secondary: Array<{term: string, input: string}>, longTail: Array<{term: string, input: string}>, competitor: Array<{term: string, input: string}>}}
  */
-export function generateKeywordsFromTitle(title) {
+export function generateKeywordTerms(title) {
   const clean = normaliseProductTitle(title);
-  if (!clean) return emptyCategories();
+  if (!clean) return { primary: [], secondary: [], longTail: [], competitor: [] };
 
   const attributes = productAttributes(clean);
   const type = matchProductType(clean);
@@ -442,10 +585,10 @@ export function generateKeywordsFromTitle(title) {
     );
 
     return {
-      primary: phrase || null,
-      secondary: supporting.length > 0 ? supporting.join(', ') : null,
-      longTail: null,
-      competitor: null,
+      primary: phrase ? [{ term: phrase, input: INPUT.TITLE_PHRASE }] : [],
+      secondary: supporting.map((term) => ({ term, input: INPUT.PRODUCT_NAME })),
+      longTail: [],
+      competitor: [],
     };
   }
 
@@ -458,14 +601,138 @@ export function generateKeywordsFromTitle(title) {
   const qualified = longTailWords.length > 0 ? `${longTailWords.join(' ')} ${type.primary}` : '';
   const longTail = qualified || type.longTail || null;
 
-  const secondary = unique([...type.secondary, ...qualifiers.slice(0, MAX_SECONDARY_ATTRIBUTES)]).join(', ');
+  const secondaryTerms = unique([...type.secondary, ...qualifiers.slice(0, MAX_SECONDARY_ATTRIBUTES)]);
+  const fromMap = new Set(type.secondary.map((term) => term.toLowerCase()));
 
   return {
-    primary: type.primary,
-    secondary: secondary || null,
-    longTail: longTail && longTail.toLowerCase() !== type.primary.toLowerCase() ? longTail : null,
-    competitor: type.competitor.join(', ') || null,
+    primary: [{ term: type.primary, input: INPUT.TERMINOLOGY }],
+    secondary: secondaryTerms.map((term) => ({
+      term,
+      input: fromMap.has(term.toLowerCase()) ? INPUT.TERMINOLOGY : INPUT.PRODUCT_NAME,
+    })),
+    longTail:
+      longTail && longTail.toLowerCase() !== type.primary.toLowerCase()
+        ? [{ term: longTail, input: qualified ? INPUT.COMPOSITE : INPUT.TERMINOLOGY }]
+        : [],
+    competitor: type.competitor.map((term) => ({ term, input: INPUT.TERMINOLOGY })),
   };
+}
+
+/**
+ * Generate the four search categories from a product name alone.
+ *
+ * The same values `generateKeywordTerms` produces, joined for display.
+ *
+ * @param {unknown} title
+ * @returns {{primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}}
+ */
+export function generateKeywordsFromTitle(title) {
+  const terms = generateKeywordTerms(title);
+  const join = (list) => (list.length > 0 ? list.map(({ term }) => term).join(', ') : null);
+
+  return {
+    primary: join(terms.primary),
+    secondary: join(terms.secondary),
+    longTail: join(terms.longTail),
+    competitor: join(terms.competitor),
+  };
+}
+
+/** The four categories, in the order the table heads them. */
+const CATEGORY_NAMES = Object.freeze(['primary', 'secondary', 'longTail', 'competitor']);
+
+/**
+ * Split a category value into the individual keywords it lists.
+ *
+ * @param {string|null} value
+ * @returns {string[]}
+ */
+function splitTerms(value) {
+  if (typeof value !== 'string') return [];
+  return value
+    .split(',')
+    .map((term) => term.trim())
+    .filter((term) => term !== '');
+}
+
+/**
+ * Where each individual keyword came from.
+ *
+ * Reports provenance for the values `resolveKeywordCategories` already
+ * produces. It changes no value and no generation rule.
+ *
+ * Each term comes back with a RESOURCE - the real place the word came from,
+ * which is what the page shows underneath it:
+ *
+ *   'product-type'       the matched PRODUCT_TYPES entry in this file
+ *   'product-name'       inventory.products.title
+ *   'product-name-type'  Product Name words qualifying the Product Type term
+ *   'database'           a keyword value recorded in ledsone
+ *   null                 NOTHING could be shown to have produced it. The page
+ *                        shows NO pill at all rather than guessing one.
+ *
+ * The resource is decided by looking the term up in what the generator
+ * actually returned - not by failing to find it somewhere else. That is why a
+ * resource can always be named beside it, and why no keyword is ever labelled
+ * merely "generated": the page reports the resource, never the method.
+ *
+ * `input` is kept alongside for the finer distinction (terminology vs title
+ * phrase, for instance), but the page does not show it.
+ *
+ * ledsone records no keyword category today (see documentation section 6), so
+ * in practice terms report 'product-type', 'product-name' or
+ * 'product-name-type'. 'database' is computed and appears as soon as a
+ * recorded value is passed in through `recorded`.
+ *
+ * @param {unknown} title
+ * @param {Partial<{primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}>} [recorded]
+ * @returns {{primary: Array<{term: string, resource: string|null, input: string|null}>, secondary: Array<{term: string, resource: string|null, input: string|null}>, longTail: Array<{term: string, resource: string|null, input: string|null}>, competitor: Array<{term: string, resource: string|null, input: string|null}>}}
+ */
+export function keywordTermSources(title, recorded = {}) {
+  const generated = generateKeywordTerms(title);
+  const resolved = resolveKeywordCategories(title, recorded);
+  const result = {};
+
+  for (const name of CATEGORY_NAMES) {
+    const candidate = recorded?.[name];
+    const isRecorded = typeof candidate === 'string' && candidate.trim() !== '';
+
+    const fromDatabase = new Set(
+      (isRecorded ? splitTerms(candidate) : []).map((term) => term.toLowerCase()),
+    );
+
+    // Term -> the input that produced it. Membership here is the evidence for
+    // 'gen', and the value is the reason.
+    const fromGenerator = new Map(
+      generated[name].map(({ term, input }) => [term.toLowerCase(), input]),
+    );
+
+    result[name] = splitTerms(resolved[name]).map((term) => {
+      const key = term.toLowerCase();
+      const inDatabase = fromDatabase.has(key);
+      const generatedBy = fromGenerator.get(key);
+
+      // `input` says how the term was arrived at; `resource` says where the
+      // word came from, and the resource is what the page shows.
+      const described = (input) => ({ term, input, resource: resourceForInput(input) });
+
+      if (inDatabase && generatedBy !== undefined) {
+        return described(INPUT.BOTH);
+      }
+      if (inDatabase) {
+        return described(INPUT.DATABASE);
+      }
+      if (generatedBy !== undefined) {
+        return described(generatedBy);
+      }
+
+      // Nothing proves where this came from. No input, and so no resource and
+      // no pill - rather than picking a label.
+      return { term, input: null, resource: null };
+    });
+  }
+
+  return result;
 }
 
 /**

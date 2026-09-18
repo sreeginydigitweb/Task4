@@ -55,6 +55,7 @@
  * schema, and reads only:
  *
  *   inventory   products - the SKU, product id and product name
+ *   listings    the recorded product category and the recorded product tags
  *
  * The other schemas in the database belong to other applications and are never
  * referenced.
@@ -126,9 +127,12 @@ function schemaName(name, fallback) {
 export const INVENTORY_SCHEMA = schemaName('DB_INVENTORY_SCHEMA', 'inventory');
 
 /**
- * Marketplace listings: read for one field only, `shopify_listings.product_type`,
- * which is ledsone's own recorded product category. Nothing else in this schema
- * is touched.
+ * Marketplace listings: read for ledsone's own recorded product category
+ * (`shopify_listings.product_type`) and for ledsone's own stored product tags
+ * (`shopify_listing_tag.tag`, reached through `shopify_listings` and
+ * `shopify_listings_parent_child_mapping` - see source.js for why the tag
+ * table's `product_id` is a LISTING id, not a product id). Read-only, like
+ * everything else here; nothing else in this schema is touched.
  */
 export const LISTINGS_SCHEMA = schemaName('DB_LISTINGS_SCHEMA', 'listings');
 
