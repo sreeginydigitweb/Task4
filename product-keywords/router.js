@@ -68,11 +68,9 @@ async function productKeywordsRoute(query) {
       page,
       pageCount,
       pageSize: PAGE_SIZE,
-      // The classification seam is handed in rather than imported by the
-      // renderer, so the page has no opinion about what the categories mean -
-      // and a test can render the table under a different rule without
-      // touching the database.
-      classify: classifyKeywords,
+      // The renderer receives resolved categories, keeping title generation
+      // testable without a live database.
+      classify: (product) => classifyKeywords(product.title, product.keywordCategories),
     }),
   );
 }

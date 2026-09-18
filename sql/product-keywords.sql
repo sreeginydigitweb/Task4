@@ -1,110 +1,62 @@
--- Task 4 - Product Keywords. The SQL this application actually runs.
+-- Task 4 - Product Keywords. The read-only SQL the application runs.
 --
--- Database: ledsone (PostgreSQL). Nothing here writes: every statement is a
--- SELECT, and the connection they run on sets
--- default_transaction_read_only = on, so the server refuses a write on it
--- regardless of what is asked.
---
--- Kept here so the queries can be read, run and changed outside the
--- JavaScript. The application builds the same statements in
--- product-keywords/source.js; the schema names there come from configuration
--- (defaults: inventory, listings) rather than being hard-coded as they are
--- below.
+-- Database: ledsone (PostgreSQL). Every statement is SELECT-only and the
+-- connection sets default_transaction_read_only = on.
 
-
--- ---------------------------------------------------------------------------
--- 1. How many products the catalogue holds.
---
--- Used for the page count and the row-count line. Kept as its own statement so
--- the page query never has to count what it is not showing.
--- ---------------------------------------------------------------------------
-
+-- 1. Catalogue total, used for pagination.
 SELECT count(*)::int AS total
 FROM inventory.products;
 
-
--- ---------------------------------------------------------------------------
--- 2. One page of products, with the keyword text recorded against each.
+-- 2. One page of confirmed product data for the seven-column view.
+-- $1 = LIMIT; $2 = OFFSET. Both values are parameters, never interpolated.
 --
--- $1 = LIMIT  (rows per page, 50)
--- $2 = OFFSET ((page - 1) * 50)
+-- The four keyword categories have no confirmed classified source in ledsone.
+-- They are resolved in application code: a confirmed category would win;
+-- otherwise product-keywords/keyword-generator.js derives deterministic
+-- Primary, Secondary, Long-Tail and Competitor search terms from
+-- inventory.products.title only, and leaves a category blank when the name
+-- supports nothing meaningful.
 --
--- Both are parameters, never interpolated text.
---
--- WHY IT IS SHAPED THIS WAY
---
--- The products for the page are chosen FIRST, in the `page` CTE, and the
--- keyword lookup is a LATERAL join that runs only for those fifty rows. The
--- work is therefore proportional to the page, not to the 44,599-row
--- catalogue, and both sides of the lookup are index-served:
---
---   listings_amazon_listings_mapped_sku_idx        on amazon_listings(mapped_sku)
---   listings_amz_search_kw_product_id_idx          on ..._keywords(product_id)
---
--- Joining everything and paging the result instead would read the whole
--- catalogue to show fifty rows of it.
---
--- THE RELATIONSHIP, AND THE TRAP IN IT
---
--- Keyword text does not hang off the product directly. It reaches it through
--- the Amazon listing:
---
---   inventory.products.sku
---     = listings.amazon_listings.mapped_sku
---   listings.amazon_listings.id
---     = listings.amazon_listing_search_engine_keywords.product_id
---
--- The middle step is NOT optional. `amazon_listing_search_engine_keywords`
--- has a column named `product_id`, but it references the LISTING, not
--- inventory.products. Of its 189,983 rows, 155,374 match
--- listings.amazon_listings.id and ZERO match inventory.products.id. Joining it
--- straight to products on that name returns an empty result, silently.
---
--- DISTINCT ON collapses the duplicates that arise when one SKU has several
--- Amazon listings (multiple marketplaces, parent and child rows), which would
--- otherwise repeat the same keyword string several times for one product.
--- The product stays one row: keyword text is aggregated into an array rather
--- than multiplying the product row.
--- ---------------------------------------------------------------------------
-
+-- Those generated values are never written back. There is no INSERT, UPDATE or
+-- upsert anywhere in this project: the keywords exist for the duration of one
+-- HTML response and are recomputed on the next request.
+-- The product image is the one joined value. Two tables in the inventory
+-- schema hold images, both keyed on product_id = inventory.products.id:
+--   inventory.product_media   type = 'main-image' marks the designated one
+--   inventory.product_images  a gallery, ordered by image_ordering
+-- The designated main image wins, the first gallery image is the fallback.
+-- This is the rule the Smart Inventory Control application already uses
+-- against the same database; these CTEs are reused from it unchanged.
+-- Both joins are LEFT joins: a product with no image is still listed, with a
+-- null image_url, and the view leaves the cell blank.
 WITH page AS (
   SELECT id, sku, title
   FROM inventory.products
   ORDER BY id
   LIMIT $1 OFFSET $2
+),
+main_media AS (
+  SELECT DISTINCT ON (m.product_id) m.product_id, m.image_url
+  FROM inventory.product_media m
+  WHERE m.type = 'main-image' AND coalesce(m.image_url, '') <> ''
+  ORDER BY m.product_id, m.id
+),
+first_image AS (
+  SELECT DISTINCT ON (i.product_id) i.product_id, i.image_url
+  FROM inventory.product_images i
+  WHERE coalesce(i.image_url, '') <> ''
+  ORDER BY i.product_id, i.image_ordering NULLS LAST, i.id
 )
-SELECT p.id,
-       p.sku,
-       p.title,
-       COALESCE(k.keywords, ARRAY[]::text[]) AS keywords
+SELECT p.id, p.sku, p.title,
+       coalesce(mm.image_url, fi.image_url) AS image_url
 FROM page p
-LEFT JOIN LATERAL (
-  SELECT array_agg(d.keyword ORDER BY d.view_order, d.keyword) AS keywords
-  FROM (
-    SELECT DISTINCT ON (kw.keyword) kw.keyword, kw.view_order
-    FROM listings.amazon_listings a
-    JOIN listings.amazon_listing_search_engine_keywords kw
-      ON kw.product_id = a.id
-    WHERE a.mapped_sku = p.sku
-    ORDER BY kw.keyword, kw.view_order
-  ) d
-) k ON true
+LEFT JOIN main_media  mm ON mm.product_id = p.id
+LEFT JOIN first_image fi ON fi.product_id = p.id
 ORDER BY p.id;
 
-
--- ---------------------------------------------------------------------------
--- 3. The startup check.
---
--- $1 = schema name ('inventory')
--- $2 = table name  ('inventory.products')
---
--- Asks the server three questions: which database this is, whether the
--- connection is in read-only transaction mode, and whether this role could
--- write to the source if it tried. The application refuses to start if the
--- database is wrong, the connection is not read-only, or the role turns out
--- to hold INSERT, UPDATE or DELETE.
--- ---------------------------------------------------------------------------
-
+-- 3. Startup protection: confirm the database, read-only transaction, and
+-- absence of write privileges on the product source.
+-- $1 = schema name ('inventory'); $2 = table name ('inventory.products').
 SELECT current_database()                        AS database,
        current_user                              AS "user",
        current_setting('transaction_read_only')  AS read_only,
@@ -114,20 +66,5 @@ SELECT current_database()                        AS database,
         OR has_table_privilege($2, 'UPDATE')
         OR has_table_privilege($2, 'DELETE'))    AS can_write;
 
-
--- ---------------------------------------------------------------------------
--- NOT PRESENT, AND WHY
---
--- There is no query here for Primary Keyword, Secondary Keywords, Long-Tail
--- Keywords or Competitor Keywords. That is not an omission - ledsone holds no
--- column, table or view that records any of those four classifications. A
--- column-name sweep across all eighteen schemas for %primary%, %secondary%,
--- %long_tail%, %longtail%, %competitor%, %seed% and %phrase% returned two
--- rows, both unrelated (google_ads.campaigns.campaign_primary_status and
--- order_management.local_postage_rates.secondary_currency).
---
--- Writing SQL that derived them - EXACT match type as "primary", word count as
--- "long-tail" - would put a business rule nobody has agreed into the database
--- layer. When the rules are agreed they belong in classifyKeywords() in
--- product-keywords/source.js, and any SQL they need can be added here then.
--- ---------------------------------------------------------------------------
+-- Unclassified keyword text and advertising match types are not mapped into a
+-- category. No competitor database, brand, API, or website is queried.

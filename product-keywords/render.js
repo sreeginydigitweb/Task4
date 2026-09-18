@@ -1,10 +1,35 @@
 /**
  * HTML rendering for the Product Keywords view.
  *
- * Pure string building. No data access, no database, no I/O: every function
- * here is handed the rows it should show and does nothing but turn them into
- * markup, which is why it can all be tested without a connection.
+ * ---------------------------------------------------------------------------
+ * WHERE THE HTML LIVES
  *
+ * The page itself is a real file: product-keywords/page.html. It holds the
+ * doctype, the head, the title, ALL of the CSS, the heading, the count line,
+ * both paging control bars with their button markup, and the complete
+ * seven-column table structure including its headers. That file is the UI; it
+ * can be read, shared or handed to a designer on its own.
+ *
+ * This module builds no structure. It supplies the values page.html marks with
+ * a name in double curly braces:
+ *
+ *   count_text        "Showing 101-150 of 44,627 products."
+ *   page_position     "Page 3 of 893"
+ *   prev_attrs        href + rel for the Previous button, or aria-disabled
+ *   next_attrs        href + rel for the Next button, or aria-disabled
+ *   controls_hidden   "hidden" when the result fits on one page
+ *   rows              the <tr> product rows
+ *   empty_message     shown only when a page has no rows
+ *
+ * The rows are the single exception, and unavoidably so: there are 44,627
+ * products, read 50 at a time, so they cannot be static markup. Everything
+ * around them is.
+ *
+ * Changing how the page looks - markup, CSS, the order of the sections, the
+ * buttons - is an edit to page.html alone. The template is read once, when the
+ * module loads, so that edit needs a server restart.
+ *
+ * ---------------------------------------------------------------------------
  * Two rules hold throughout:
  *
  * 1. Every dynamic value goes through escapeHtml before it reaches the page.
@@ -15,6 +40,15 @@
  *    category with no source renders as an empty table cell, never as a
  *    keyword borrowed from somewhere else and relabelled.
  */
+
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+
+/** page.html, read once at startup. */
+const TEMPLATE = readFileSync(join(HERE, 'page.html'), 'utf8');
 
 const ESCAPES = {
   '&': '&amp;',
@@ -53,71 +87,54 @@ export function number(value) {
   return Number(value).toLocaleString('en-GB');
 }
 
-const STYLES = `
-:root {
-  color-scheme: light dark;
-  --bg: #f6f7f9;
-  --panel: #ffffff;
-  --ink: #1b1f24;
-  --muted: #5b6672;
-  --line: #d8dee6;
-  --accent: #1f4f82;
+/**
+ * The stylesheet, taken from the one place it is written: page.html.
+ *
+ * The small message pages below share it rather than keeping a second copy, so
+ * editing the `<style>` block in page.html restyles every page this
+ * application serves.
+ */
+const STYLES = /<style>([\s\S]*?)<\/style>/.exec(TEMPLATE)?.[1] ?? '';
+
+/**
+ * Fill page.html placeholders with the markup this module built.
+ *
+ * ONE pass over the template, deliberately. The two alternatives in the
+ * pattern cover the two shapes of placeholder:
+ *
+ * 1. Alone on its own line, where it takes the whole line with it if it has no
+ *    value - so an absent section, such as the paging bars on a single-page
+ *    result, leaves no blank gap behind.
+ * 2. Anywhere else, replaced where it stands.
+ *
+ * Two hazards, both closed by doing it this way. A second pass would scan the
+ * markup the first pass inserted, so a product whose TITLE contained
+ * `{{table}}` would have the entire table spliced into its own name; String
+ * replace never rescans what it inserts, so one pass cannot do that. And the
+ * replacement is a FUNCTION rather than a string because `$&`, `$1` and
+ * backtick carry special meaning in a string replacement - product titles are
+ * free text and do contain them. A function returns its value literally.
+ *
+ * An unknown placeholder becomes empty rather than throwing: page.html belongs
+ * to whoever is editing the page, and a typo there should not take the site
+ * down.
+ *
+ * @param {Object<string, string>} values
+ * @returns {string}
+ */
+function fillTemplate(values) {
+  const value = (name) => (typeof values[name] === 'string' ? values[name] : '');
+
+  return TEMPLATE.replace(
+    /^[ \t]*\{\{(\w+)\}\}[ \t]*\r?\n|\{\{(\w+)\}\}/gm,
+    (whole, ownLine, inline) => {
+      if (inline !== undefined) return value(inline);
+
+      const filled = value(ownLine);
+      return filled === '' ? '' : `${filled}\n`;
+    },
+  );
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #14171b;
-    --panel: #1c2026;
-    --ink: #e6e9ed;
-    --muted: #9aa5b1;
-    --line: #2e353e;
-    --accent: #7fb0e6;
-  }
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--ink);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-}
-.masthead {
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
-  padding: 14px 20px;
-}
-.masthead .title { font-weight: 650; letter-spacing: .01em; }
-.masthead .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
-main { padding: 20px; max-width: 100%; }
-h1 { font-size: 21px; margin: 0 0 6px; }
-.lede { color: var(--muted); margin: 0 0 16px; max-width: 70ch; }
-.notice {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-left: 3px solid var(--accent);
-  border-radius: 4px;
-  padding: 12px 14px;
-  margin: 0 0 16px;
-  max-width: 90ch;
-}
-.notice h2 { font-size: 14px; margin: 0 0 6px; }
-.notice p { margin: 0 0 6px; color: var(--muted); }
-.notice p:last-child { margin-bottom: 0; }
-.count { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
-.scroll-hint { color: var(--muted); font-size: 12px; margin: 0 0 6px; }
-.table-scroll { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; }
-table { border-collapse: collapse; width: 100%; font-size: 13px; }
-th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
-th { background: var(--panel); position: sticky; top: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); white-space: nowrap; }
-tbody tr:last-child td { border-bottom: 0; }
-td.sku { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; }
-td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-td.name { min-width: 26ch; max-width: 40ch; }
-.pager { display: flex; gap: 10px; align-items: center; margin-top: 14px; font-size: 13px; }
-.pager a { color: var(--accent); }
-.pager span.here { color: var(--muted); }
-.empty { color: var(--muted); padding: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; }
-footer { margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
-`;
 
 /**
  * The page shell.
@@ -154,31 +171,6 @@ ${body}
 }
 
 /**
- * Wrap table markup, or show an empty-state message when there is nothing to
- * show.
- *
- * @param {string} rows
- * @param {string} head
- * @param {string} emptyMessage
- * @returns {string}
- */
-export function tableOrEmpty(rows, head, emptyMessage) {
-  if (!rows) {
-    return `    <p class="empty">${escapeHtml(emptyMessage)}</p>`;
-  }
-
-  return `    <p class="scroll-hint">Scroll the table sideways to see every column.</p>
-    <div class="table-scroll">
-      <table>
-        <thead><tr>${head}</tr></thead>
-        <tbody>
-${rows}
-        </tbody>
-      </table>
-    </div>`;
-}
-
-/**
  * One cell for a keyword category.
  *
  * A category the database does not record is an actual empty HTML cell.
@@ -194,51 +186,81 @@ function categoryCell(value) {
 }
 
 /**
- * Previous / next links.
+ * The product image cell.
  *
- * @param {number} page
- * @param {number} pageCount
+ * A picture is shown only when the database actually holds a web address for
+ * one. Anything else - no row in either image table, an empty string, or a
+ * value that is not an http(s) address - leaves the cell genuinely empty. No
+ * placeholder image, no stand-in URL, no "no image" graphic.
+ *
+ * The scheme check is deliberate. The URL is database text, and `src` is an
+ * attribute the browser acts on, so only http and https are let through; a
+ * `data:`, `javascript:` or relative value is treated as no image rather than
+ * passed to the browser. The URL and the alt text are both escaped, so a
+ * quote in either cannot close the attribute and add one of its own.
+ *
+ * @param {string|null} url    The image address from ledsone.
+ * @param {unknown} productName  Used as the alt text.
  * @returns {string}
  */
-function pager(page, pageCount) {
-  if (pageCount <= 1) return '';
+function imageCell(url, productName) {
+  if (typeof url !== 'string' || !/^https?:\/\//i.test(url.trim())) {
+    return '<td class="img"></td>';
+  }
 
-  const previous =
-    page > 1
-      ? `<a href="/product-keywords?page=${page - 1}" rel="prev">&larr; Previous</a>`
-      : '<span class="here">&larr; Previous</span>';
-
-  const next =
-    page < pageCount
-      ? `<a href="/product-keywords?page=${page + 1}" rel="next">Next &rarr;</a>`
-      : '<span class="here">Next &rarr;</span>';
-
-  return `    <nav class="pager">${previous}<span class="here">Page ${number(page)} of ${number(pageCount)}</span>${next}</nav>`;
+  const alt = escapeHtml(productName);
+  return (
+    `<td class="img"><img src="${escapeHtml(url.trim())}" alt="${alt}"` +
+    ' width="56" height="56" loading="lazy" decoding="async"></td>'
+  );
 }
 
-/** The table heading, in the order the requirement asks for. */
-const HEAD =
-  '<th>SKU</th>' +
-  '<th>Product ID</th>' +
-  '<th>Product Name</th>' +
-  '<th>Primary Keyword</th>' +
-  '<th>Secondary Keywords</th>' +
-  '<th>Long-Tail Keywords</th>' +
-  '<th>Competitor Keywords</th>';
+/**
+ * The attributes one paging button carries.
+ *
+ * The button itself - its tag, its class, its label - is written out in
+ * page.html. All this decides is whether the button leads anywhere: an
+ * `href` when the page exists, `aria-disabled` when it does not. A disabled
+ * button therefore has no href at all, which is why `page=0` never appears in
+ * the markup and why the browser will not follow it.
+ *
+ * The value is interpolated as markup rather than text, so it is built only
+ * from a whole number and fixed strings - never from database data.
+ *
+ * @param {number|null} target  The page to link to, or null for disabled.
+ * @param {'prev'|'next'} rel
+ * @returns {string}
+ */
+function buttonAttributes(target, rel) {
+  return target === null
+    ? 'aria-disabled="true"'
+    : `href="/product-keywords?page=${Math.trunc(target)}" rel="${rel}"`;
+}
 
 /**
  * The Product Keywords page.
  *
- * Exactly seven columns, in the requested order. `ledsone` does not record
- * classifications for the final four, so their cells are deliberately blank.
+ * This function builds VALUES, not structure. The document - doctype, head,
+ * CSS, heading, count line, both control bars with their buttons, and the
+ * seven-column table with its headers - is written out in page.html, and is
+ * filled here with the seven slots that depend on the data:
+ *
+ *   count_text, page_position, prev_attrs, next_attrs, controls_hidden,
+ *   rows, empty_message
+ *
+ * The rows are the one piece of markup built here, because they come from the
+ * database a page at a time. Each is exactly eight cells, in the order
+ * page.html heads them, and every value passes through escapeHtml. A keyword
+ * category with nothing to show is an empty cell, never placeholder text, and
+ * so is a product the database holds no image for.
  *
  * @param {object} options
- * @param {Array<{id: number, sku: string, title: string}>} options.products
+ * @param {Array<{id: number, sku: string, title: string, image?: string|null}>} options.products
  * @param {number} options.total     Products in the catalogue.
  * @param {number} options.page      1-based.
  * @param {number} options.pageCount
  * @param {number} options.pageSize  Products per page, for the row-count line.
- * @param {() => {primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}} options.classify
+ * @param {(product: {id: number, sku: string, title: string}) => {primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}} options.classify
  * @returns {string}
  */
 export function renderProductKeywordsPage({
@@ -251,10 +273,11 @@ export function renderProductKeywordsPage({
 }) {
   const rows = products
     .map((product) => {
-      const category = classify();
+      const category = classify(product);
 
       return (
         '          <tr>' +
+        imageCell(product.image ?? null, product.title) +
         `<td class="sku">${escapeHtml(product.sku)}</td>` +
         `<td class="num">${escapeHtml(product.id)}</td>` +
         `<td class="name">${escapeHtml(product.title)}</td>` +
@@ -268,23 +291,23 @@ export function renderProductKeywordsPage({
     .join('\n');
 
   const first = products.length === 0 ? 0 : (page - 1) * pageSize + 1;
-  const count =
+  const countText =
     products.length === 0
-      ? '<p class="count">No products on this page.</p>'
-      : `<p class="count">Showing ${number(first)}&ndash;${number(first + products.length - 1)} of ${number(total)} products.</p>`;
+      ? 'No products on this page.'
+      : `Showing ${number(first)}&ndash;${number(first + products.length - 1)} of ${number(total)} products.`;
 
-  const notice = `    <section class="notice">
-      <h2>What this page can and cannot tell you</h2>
-      <p>SKU, Product ID and Product Name come from <code>inventory.products</code> in ledsone and are complete.</p>
-      <p>Primary, Secondary, Long-Tail and Competitor are blank because ledsone holds no such classification. No competitor keyword source exists in ledsone at all. Nothing on this page has been guessed or derived.</p>
-    </section>`;
+  // One page of results has nowhere to page to, so page.html hides both bars
+  // rather than showing two buttons that cannot be used.
+  const single = pageCount <= 1;
 
-  return layout({
-    title: 'Product Keywords',
-    lede: 'Products from the ledsone catalogue with the keyword text recorded against them.',
-    body: [notice, count, tableOrEmpty(rows, HEAD, 'No products found.'), pager(page, pageCount)]
-      .filter(Boolean)
-      .join('\n'),
+  return fillTemplate({
+    count_text: countText,
+    page_position: `Page ${number(page)} of ${number(pageCount)}`,
+    prev_attrs: buttonAttributes(page > 1 ? page - 1 : null, 'prev'),
+    next_attrs: buttonAttributes(page < pageCount ? page + 1 : null, 'next'),
+    controls_hidden: single ? ' hidden' : '',
+    rows,
+    empty_message: rows === '' ? '    <p class="empty">No products found.</p>' : '',
   });
 }
 

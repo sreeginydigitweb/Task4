@@ -24,6 +24,7 @@
  */
 
 import { INVENTORY_SCHEMA, firstRow, rows } from './db.js';
+import { resolveKeywordCategories } from './keyword-generator.js';
 
 /**
  * Products shown per page.
@@ -37,37 +38,20 @@ export const PAGE_SIZE = 50;
  * THE CLASSIFICATION SEAM.
  *
  * This is the one place where the four requested keyword categories are
- * decided, and today it decides that none of them are known.
+ * resolved. A confirmed database category wins; otherwise the product title
+ * supplies a deterministic search-term fallback.
  *
- * That is not a placeholder standing in for work that was skipped. It is the
- * accurate answer: `ledsone` holds no primary/secondary/long-tail/competitor
- * distinction to read, and inventing one - calling an EXACT match "primary",
- * or a four-word phrase "long-tail" - would put a claim on the page that the
- * business has never made and cannot be checked against anything. The rules
- * for these four categories have not been agreed, so nothing is asserted.
+ * `ledsone` currently has no confirmed classified categories, so production
+ * calls use the title fallback. The `recorded` argument is deliberately kept
+ * at this seam: if a properly classified source is later introduced, it can be
+ * passed here without changing rendering or routing.
  *
- * When the rules ARE agreed, this function is what changes. It returns one
- * value per category; returning null means "the database does not say", and
- * the page renders that as a blank cell. Neither the SQL, the router nor the
- * rendering layer needs to be touched to switch a category on - which is the
- * whole reason the decision lives in a function of its own rather than being
- * spread through the query.
- *
+ * @param {unknown} title
+ * @param {Partial<{primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}>} [recorded]
  * @returns {{primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}}
  */
-export function classifyKeywords() {
-  return {
-    // No column in ledsone marks a keyword as the primary one.
-    primary: null,
-    // No column in ledsone marks keywords as secondary.
-    secondary: null,
-    // No column in ledsone marks keywords as long-tail. Word count is a guess,
-    // not a record, so it is not used.
-    longTail: null,
-    // No competitor keyword source exists in ledsone at all. The competitor
-    // tables are in a different database, which this version does not read.
-    competitor: null,
-  };
+export function classifyKeywords(title, recorded = {}) {
+  return resolveKeywordCategories(title, recorded);
 }
 
 /**
@@ -84,24 +68,68 @@ export async function countProducts() {
 }
 
 /**
- * One page of products.
+ * One page of products, with the image to show for each.
  *
  * LIMIT and OFFSET are parameters, not interpolated text.
+ *
+ * ---------------------------------------------------------------------------
+ * THE PRODUCT IMAGE
+ *
+ * Two tables in the `inventory` schema hold product images, and both key on
+ * `product_id`, which is `inventory.products.id`:
+ *
+ *   inventory.product_media   image_url, with type = 'main-image' marking the
+ *                             one designated as the product's main picture
+ *   inventory.product_images  image_url, a gallery ordered by image_ordering
+ *
+ * The designated main image wins; the first gallery image is the fallback.
+ * That preference is not a guess made here - it is the rule the Smart
+ * Inventory Control application (`../Inventory System`, inventory/source.js)
+ * already uses against this same database, and this query is that query's
+ * image CTEs reused unchanged.
+ *
+ * Both joins are LEFT joins, so a product with no image is still listed; its
+ * image is null and the view leaves the cell blank. About one product in six
+ * is in that position - 7,341 of 44,636 when last measured, though the
+ * catalogue is live and grows.
+ *
+ * The page is narrowed FIRST, in the `page` CTE, so the image lookups run
+ * against the 50 rows being shown rather than the whole catalogue.
  *
  * @param {object} [options]
  * @param {number} [options.page]      1-based page number.
  * @param {number} [options.pageSize]
- * @returns {Promise<Array<{id: number, sku: string, title: string}>>}
+ * @returns {Promise<Array<{id: number, sku: string, title: string, image: string|null}>>}
  */
 export async function findProductKeywordPage({ page = 1, pageSize = PAGE_SIZE } = {}) {
   const limit = Math.max(1, Math.trunc(pageSize));
   const offset = (Math.max(1, Math.trunc(page)) - 1) * limit;
 
   const found = await rows(
-    `SELECT id, sku, title
-     FROM ${INVENTORY_SCHEMA}.products
-     ORDER BY id
-     LIMIT $1 OFFSET $2`,
+    `WITH page AS (
+       SELECT id, sku, title
+       FROM ${INVENTORY_SCHEMA}.products
+       ORDER BY id
+       LIMIT $1 OFFSET $2
+     ),
+     main_media AS (
+       SELECT DISTINCT ON (m.product_id) m.product_id, m.image_url
+       FROM ${INVENTORY_SCHEMA}.product_media m
+       WHERE m.type = 'main-image' AND coalesce(m.image_url, '') <> ''
+       ORDER BY m.product_id, m.id
+     ),
+     first_image AS (
+       SELECT DISTINCT ON (i.product_id) i.product_id, i.image_url
+       FROM ${INVENTORY_SCHEMA}.product_images i
+       WHERE coalesce(i.image_url, '') <> ''
+       ORDER BY i.product_id, i.image_ordering NULLS LAST, i.id
+     )
+     SELECT p.id, p.sku, p.title,
+            coalesce(mm.image_url, fi.image_url) AS image_url
+     FROM page p
+     LEFT JOIN main_media  mm ON mm.product_id = p.id
+     LEFT JOIN first_image fi ON fi.product_id = p.id
+     ORDER BY p.id`,
     [limit, offset],
   );
 
@@ -109,8 +137,8 @@ export async function findProductKeywordPage({ page = 1, pageSize = PAGE_SIZE } 
     id: row.id,
     sku: row.sku,
     title: row.title,
-    // Null keyword text is dropped rather than shown as an empty entry: a row
-    // exists for it in the source, but there is nothing in it to display.
-    keywords: (row.keywords ?? []).filter((keyword) => keyword !== null && keyword !== ''),
+    // Null when neither table holds one. The view shows a blank cell; it never
+    // substitutes a placeholder image.
+    image: row.image_url ?? null,
   }));
 }

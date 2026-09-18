@@ -8,15 +8,63 @@ Database: **ledsone** (PostgreSQL). No other database is read.
 
 | # | HTML column | Database | Schema.table | Column | Status |
 |---|---|---|---|---|---|
-| 1 | SKU | ledsone | `inventory.products` | `sku` | Confirmed |
-| 2 | Product ID | ledsone | `inventory.products` | `id` | Confirmed |
-| 3 | Product Name | ledsone | `inventory.products` | `title` | Confirmed |
-| 4 | Primary Keyword | — | — | — | **No source in ledsone** |
-| 5 | Secondary Keywords | — | — | — | **No source in ledsone** |
-| 6 | Long-Tail Keywords | — | — | — | **No source in ledsone** |
-| 7 | Competitor Keywords | — | — | — | **No source in ledsone** |
-Columns 4-7 render as actual blank HTML cells, `<td></td>`. They have no
-confirmed source classification in ledsone, so no value is displayed.
+| 1 | Product Image | ledsone | `inventory.product_media`, then `inventory.product_images` | `image_url` | Confirmed; main image preferred, first gallery image as fallback, blank if neither |
+| 2 | SKU | ledsone | `inventory.products` | `sku` | Confirmed |
+| 3 | Product ID | ledsone | `inventory.products` | `id` | Confirmed |
+| 4 | Product Name | ledsone | `inventory.products` | `title` | Confirmed |
+| 5 | Primary Keyword | ledsone | `inventory.products` | `title` | Deterministic fallback; recorded category wins if available |
+| 6 | Secondary Keywords | ledsone | `inventory.products` | `title` | Deterministic fallback; blank if no meaningful term |
+| 7 | Long-Tail Keywords | ledsone | `inventory.products` | `title` | Deterministic fallback; blank if no meaningful term |
+| 8 | Competitor Keywords | ledsone | `inventory.products` | `title` | Generic alternative terminology only; never a competitor brand |
+
+## Column 1 - the product image relationship
+
+```
+inventory.products
+    │  products.id = product_media.product_id      (type = 'main-image')
+    ├──────────────────────────────────────────────►  inventory.product_media
+    │                                                 43,350 rows
+    │  products.id = product_images.product_id
+    └──────────────────────────────────────────────►  inventory.product_images
+                                                      36,748 rows, ordered by
+                                                      image_ordering
+```
+
+Both are LEFT joins, one row per product (`DISTINCT ON (product_id)`), so no
+product is duplicated and none is dropped. `coalesce(main_media.image_url,
+first_image.image_url)` picks the designated main image, then the first gallery
+image. Neither table declares a foreign key, but `product_id` is
+`inventory.products.id` - the relationship the Smart Inventory Control
+application already relies on against this database, whose two image CTEs are
+reused here unchanged.
+
+7,341 of 44,636 products (16.4%) have no image in either table. Those cells are
+empty HTML cells. No placeholder image and no stand-in URL is ever emitted, and
+a stored value that is not an `http`/`https` address is treated as no image.
+
+The `listings`, `google_ads` and `suppliers` image tables also exist in ledsone
+and are deliberately **not** read - they belong to other applications. A test
+fails the build if one is referenced.
+
+No confirmed classified category source currently exists in ledsone. The
+fallback uses only Product Name. It never maps unclassified keyword text or
+advertising match types into these fields. Missing categories render as actual
+blank HTML cells, `<td></td>`.
+
+Columns 4-7 resolve in one fixed order: a recorded ledsone value if there is
+one, otherwise generation from `title`, otherwise blank. A recorded value is
+never overwritten, and a recorded value that is empty or whitespace counts as
+missing rather than as data.
+
+Generation reads two things out of `title` and nothing else - the product TYPE
+(generic terminology such as "wall light switches" -> Light Switch) and
+ATTRIBUTE words the name already contains (style, colour, material,
+configuration, lamp fitting, form). Column 5 carries synonyms plus supported
+attributes, column 6 a more specific multi-word phrase, column 7 alternative
+wording for the same product type. Nothing is keyed on `id` or `sku`.
+
+These generated values exist in the HTML response only. No row is written,
+updated or cached in ledsone or anywhere else; the connection stays read-only.
 
 ## Column 3 - a naming note
 

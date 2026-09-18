@@ -3,8 +3,16 @@
 A read-only HTML view of product and keyword data from the existing **ledsone**
 PostgreSQL database.
 
-One page, one table, no framework. Node 20 with a single dependency (`pg`) and
-hand-rendered HTML.
+One page, one table, no framework. Node 20 with a single dependency (`pg`).
+
+The page itself is a plain, complete HTML file: **`product-keywords/page.html`**.
+It holds the doctype, head, title, all of the CSS, the heading, the count area,
+both paging control bars with their buttons, and the full eight-column table
+structure including every header. Open it and you can see the whole screen
+without reading any JavaScript, and it can be shared on its own as the UI
+reference. The application only fills in values - the product rows and the
+paging state - read live from the database. Edit that file to change how the
+page looks.
 
 ```
 ledsone DB  ->  SQL query  ->  Node application  ->  HTML table
@@ -15,12 +23,14 @@ ledsone DB  ->  SQL query  ->  Node application  ->  HTML table
 Show the product catalogue alongside the keyword data recorded against each
 product, in the table structure requested:
 
-SKU · Product ID · Product Name · Primary Keyword · Secondary Keywords ·
-Long-Tail Keywords · Competitor Keywords
+Product Image · SKU · Product ID · Product Name · Primary Keyword ·
+Secondary Keywords · Long-Tail Keywords · Competitor Keywords
 
-Three of those seven columns are backed by ledsone. Four are not, and their
-cells are intentionally blank rather than being filled with invented values. See **Current data limitations** below -
-it is the most important section in this file.
+Four of those eight columns are backed by ledsone. The four keyword columns
+are not: they are generated from the Product Name, and a cell stays genuinely
+blank rather than being filled with an invented value when the name supports
+nothing meaningful. See **Current data limitations** and **Keyword generation**
+below - together they are the most important part of this file.
 
 ## Scope: ledsone only
 
@@ -70,8 +80,43 @@ Open <http://localhost:3100/product-keywords>.
 Every setting is documented in it.
 
 ```bash
-npm test     # 39 tests, no database required
+npm test     # 139 tests, no database required
 ```
+
+## The shareable single file
+
+`npm run snapshot` builds **one self-contained HTML file** at
+`share/product-keywords-snapshot.html`. Open it by double-clicking; nothing
+else is needed. It carries its own HTML, CSS, JavaScript and data - no server,
+no database, no separate `.js` or `.css` file, no framework, no CDN.
+
+```bash
+npm run snapshot                          # 500 products (10 pages of 50)
+npm run snapshot -- --limit 2000          # more products
+npm run snapshot -- --limit 200 --embed-images
+npm run snapshot -- --out share/for-review.html
+```
+
+All eight columns, product images, and paging (Previous / Next at top and
+bottom, plus arrow keys and a `#page=N` fragment) work inside the file.
+
+Two things to be clear about:
+
+- **It is a point-in-time copy, not a live view.** It shows the catalogue as it
+  was when built, and says so on the page. Rebuild it to refresh.
+- **Browser JavaScript cannot connect to PostgreSQL**, and nothing pretends
+  otherwise. The database is read in Node at build time over the same
+  read-only connection the live app uses, and only the *result* is embedded.
+  The file contains no host, port, user, password, connection string or SQL,
+  and a test fails the build if any of those ever appear in it.
+
+By default the `<img>` elements point at the image addresses ledsone already
+holds, so viewing the pictures needs a connection; everything else works
+offline. `--embed-images` inlines them as `data:` URIs for a file that needs no
+internet at all, at roughly 55KB per product.
+
+The live application at `/product-keywords` is unaffected and stays
+script-free - `page.html` remains its server-side template.
 
 ## Available route
 
@@ -88,11 +133,18 @@ npm test     # 39 tests, no database required
 
 | Column | Source |
 |---|---|
+| Product Image | `inventory.product_media.image_url` where `type = 'main-image'`, falling back to `inventory.product_images.image_url` (first by `image_ordering`). Both key on `product_id` = `products.id`. About one product in six has no image; those cells are blank, never a placeholder. |
 | SKU | `inventory.products.sku` |
 | Product ID | `inventory.products.id` |
 | Product Name | `inventory.products.title` (there is no `product_name` column) |
 
-**Not in ledsone - intentionally blank:**
+The image rule - designated main image first, first gallery image as fallback -
+is reused unchanged from **Smart Inventory Control** (`../Inventory System`),
+which already reads these tables. Nothing about the image source was invented
+here, and the `listings`, `google_ads` and `suppliers` image tables are not
+read.
+
+**Not classified in ledsone - Product Name fallback:**
 
 | Column | Why |
 |---|---|
@@ -107,42 +159,66 @@ matching `%primary%`, `%secondary%`, `%long_tail%`, `%longtail%`,
 both unrelated to keywords. The queries are in
 `query-packs/keyword-source-investigation.md`.
 
-## Keyword classifications are not invented
+## Keyword generation
 
-This is a deliberate constraint, not an unfinished feature.
+The category priority is: a confirmed classified `ledsone` value, then a
+deterministic Product Name search-term fallback, then a blank cell when no
+meaningful term can be formed. `ledsone` currently has no confirmed classified
+source for these four categories, so the running view uses the title fallback.
 
-The page does not derive Primary from an EXACT match type, Secondary from
-PHRASE or BROAD, or Long-Tail from word count. Those are business rules that
-have not been agreed, and applying one would put a claim on the page that the
-business has never made and that cannot be checked against anything in the
-source. Competitor Keywords cannot be derived at all - ledsone holds no
-competitor data.
+There is **no Keyword Guidance PDF in this repository**; the repository was
+searched for one. Until real guidance is supplied, generation follows the
+project's own rules, stated at the top of `keyword-generator.js`.
 
-So the four unavailable categories render as actual empty `<td></td>` cells.
-There is no unclassified-keywords column.
+The page does not derive a category from advertising match type or unclassified
+keyword text. Its pure generator uses only `inventory.products.title`: a
+generic product-terminology map recognises the product TYPE, and an attribute
+vocabulary picks up words the name already contains - style, colour, material,
+configuration, lamp fitting, form. A material or colour therefore appears only
+when the product name itself says so; it is read out of the name, never
+guessed. No brand, company, measurement, price or compatibility claim is ever
+added. Competitor Keywords are alternative generic wording for the same product
+type; no competitor brand or company is named.
 
-Six tests in `product-keywords/source.test.js` assert that all four categories
-return `null`, and a test in `render.test.js` extracts every table cell and
-asserts that none of them contains the words Primary, Secondary, Long-Tail or
-Competitor. If a classification is introduced later, those tests fail - which
-is the point. It should be a deliberate change, not a quiet one.
+Secondary Keywords carry synonyms and supported attributes, Long-Tail Keywords
+a more specific multi-word phrase (`Black 1 Gang Screwless Light Switch`), and
+Competitor Keywords the alternative wording a shopper might use instead - three
+different search purposes, never a copy of the product name. A category that
+cannot be generated remains an actual empty `<td></td>` cell. There is no
+unclassified-keywords column.
 
-**When the rules are agreed**, the single place to change is
-`classifyKeywords()` in `product-keywords/source.js`. The SQL, the router and
-the renderer do not need to change.
+The type map is keyed on terminology, not on product ids: a product added to
+ledsone later is handled by the same rules, and no id is special-cased.
+Generated values live in the HTML response only - nothing is written back to
+ledsone or cached anywhere.
+
+`product-keywords/keyword-generator.test.js` covers deterministic title-only
+generation, category distinctness, attribute support, brand avoidance,
+id-independence, and blank handling. The category seam tests confirm a recorded
+value wins over fallback output.
+
+If a confirmed classified database source is added later, it is passed to
+`classifyKeywords()` in `product-keywords/source.js`; the renderer and routing
+do not need to change.
 
 ## Layout
 
 ```
 product-keywords/     the application
   db.js                 pg Pool, read-only latch, startup check
-  source.js             the product SELECTs and classification seam
-  render.js             HTML string building and escaping
+  source.js             product SELECTs and category-priority seam
+  keyword-generator.js  deterministic Product Name fallback
+  page.html             THE PAGE - doctype, head, title, all CSS, heading,
+                        count area, both control bars with buttons, and the
+                        complete 8-column table structure
+  render.js             supplies values for page.html; builds the rows only
+  snapshot.js           builds the self-contained single-file HTML snapshot
   router.js             paths and page numbers
   server.js             node:http server and security headers
-  *.test.js             39 tests, no database required
+  *.test.js             139 tests, no database required
   .env.example          documented configuration template
 
+share/                the generated single-file HTML snapshot (build artifact)
 sql/                  the SQL, readable outside the JavaScript
 data-maps/            column-by-column source map
 documentation/        how it works

@@ -116,3 +116,58 @@ test('the server serves no JavaScript and allows none', () => {
   assert.match(code, /default-src 'none'/);
   assert.ok(!/script-src 'self'/.test(code), 'this application serves no script');
 });
+
+test('images are allowed only from the named product-image hosts', () => {
+  // Comments stripped: the prose above the header legitimately discusses what
+  // img-src must not become.
+  const code = stripComments(readFileSync(join(HERE, 'server.js'), 'utf8'));
+
+  // The Product Image column needs img-src, but it must stay an allowlist:
+  // a wildcard would let any URL in a database row make the page fetch from
+  // anywhere.
+  assert.match(code, /img-src \$\{IMAGE_HOSTS\.join\(' '\)\}/);
+  assert.match(code, /const IMAGE_HOSTS = Object\.freeze\(\[/);
+
+  const hosts = /const IMAGE_HOSTS = Object\.freeze\(\[([\s\S]*?)\]\)/.exec(code)?.[1] ?? '';
+  assert.ok(hosts.trim() !== '', 'at least one image host is named');
+  assert.ok(!hosts.includes('*'), 'img-src must not be a wildcard');
+  assert.ok(!/\bdata:|\bblob:/.test(hosts), 'img-src must not allow data: or blob: URLs');
+  for (const [, host] of hosts.matchAll(/'([^']+)'/g)) {
+    assert.match(host, /^https?:\/\/[a-z0-9.-]+$/i, `${host} must be a plain host origin`);
+  }
+
+  assert.match(code, /'referrer-policy': 'no-referrer'/);
+});
+
+test('only the permitted schemas are read for product images', () => {
+  const code = stripComments(readFileSync(join(HERE, 'source.js'), 'utf8'));
+
+  // The image tables are in the inventory schema, reached through the schema
+  // constant like every other table.
+  assert.match(code, /\$\{INVENTORY_SCHEMA\}\.product_media/);
+  assert.match(code, /\$\{INVENTORY_SCHEMA\}\.product_images/);
+
+  // Not the listings, google_ads or suppliers image tables: they belong to
+  // other applications and were not asked for.
+  for (const elsewhere of [
+    'amazon_listing_images',
+    'ebay_listing_images',
+    'shopify_listing_images',
+    'merchant_products',
+    'main_image_url',
+  ]) {
+    assert.ok(!code.includes(elsewhere), `source.js must not read ${elsewhere}`);
+  }
+});
+
+test('the page template introduces no script and no external request', () => {
+  // page.html is editable by hand, which is the point of it. These are the two
+  // things an edit must not smuggle in: the page runs no JavaScript, and it
+  // fetches nothing from outside - the server's own Content-Security-Policy
+  // would block both, so an edit doing it would fail silently in a browser.
+  const template = readFileSync(join(HERE, 'page.html'), 'utf8');
+
+  assert.ok(!/<script/i.test(template), 'page.html must not contain a script tag');
+  assert.ok(!/\son[a-z]+\s*=/i.test(template), 'page.html must not contain an inline event handler');
+  assert.ok(!/https?:\/\//i.test(template), 'page.html must not load anything from off-site');
+});

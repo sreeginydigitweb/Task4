@@ -63,19 +63,49 @@ function readForm(req) {
 }
 
 /**
+ * Where product images are allowed to be loaded from.
+ *
+ * The Product Image column shows pictures the ledsone database already points
+ * at, and those addresses live on the business's own storage. Rather than
+ * opening img-src to the whole web, only the hosts the data actually uses are
+ * allowed - so a stray or tampered URL in a database row cannot make the page
+ * fetch from somewhere else.
+ *
+ * Checked against the data: inventory.product_images and
+ * inventory.product_media together hold 79,934 non-empty image URLs, on
+ * sin1.contabostorage.com (79,934 less 162) and dashboard.digitweblk.com
+ * (162, some of them http).
+ *
+ * IF THE BUSINESS MOVES ITS IMAGE STORAGE, ADD THE NEW HOST HERE. Images will
+ * otherwise stop appearing, visibly and without any other symptom.
+ */
+const IMAGE_HOSTS = Object.freeze([
+  'https://sin1.contabostorage.com',
+  'https://dashboard.digitweblk.com',
+  'http://dashboard.digitweblk.com',
+]);
+
+/**
  * Security headers.
  *
  * default-src 'none' and no script-src at all: this application serves no
- * JavaScript, so the page is allowed to load nothing external and run nothing.
- * style-src allows the one inline stylesheet the layout carries. There is no
- * image, no font and no CDN.
+ * JavaScript, so the page runs nothing and may load nothing except what is
+ * named below. style-src allows the one inline stylesheet the layout carries.
+ *
+ * img-src names the product-image hosts and nothing else. It is the only
+ * outbound request this page can make. Note that loading an image does tell
+ * that host a viewer opened the page; referrer-policy: no-referrer keeps the
+ * URL of this page out of it.
  *
  * form-action 'none' because there is no form - nothing here is ever
  * submitted, as the source database is read-only to this application.
  */
 const SECURITY_HEADERS = Object.freeze({
   'content-security-policy':
-    "default-src 'none'; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'; frame-ancestors 'none'",
+    "default-src 'none'; " +
+    "style-src 'unsafe-inline'; " +
+    `img-src ${IMAGE_HOSTS.join(' ')}; ` +
+    "form-action 'none'; base-uri 'none'; frame-ancestors 'none'",
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'no-referrer',
 });
