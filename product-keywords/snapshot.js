@@ -12,8 +12,7 @@
  *     exactly like the live page and there is one place to restyle both)
  *   - all of the JavaScript, inline - paging and row rendering
  *   - the product data, embedded as JSON
- *   - all ten columns, Product Image first, including ledsone's own stored
- *     Product Tags
+ *   - all nine columns, Product Image first
  *
  * No server, no database, no separate .js or .css file, no framework, no CDN
  * script. Opening the file is enough.
@@ -67,10 +66,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { closePool } from './db.js';
-import { RESOURCE_DESCRIPTION, RESOURCE_LABEL } from './keyword-generator.js';
-// The product-tag overflow threshold, taken from the live renderer so the two
-// cannot disagree about how many pills a cell draws.
-import { TAGS_SHOWN } from './render.js';
+import { SOURCE_LABEL } from './provenance.js';
 import { PAGE_SIZE, classifyKeywordTerms, countProducts, findProductKeywordPage } from './source.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -169,17 +165,30 @@ export function serialiseData(data) {
  * Keyword values come from the application's own classifier, unchanged - the
  * snapshot shows the same keywords as the live page, from the same code.
  *
- * @param {{id: number, sku: string, title: string, image: string|null, category?: string|null, tags?: string[]}} product
- * @returns {{image: string|null, sku: string, id: string, name: string, category: string|null, tags: string[], primary: object[], secondary: object[], longTail: object[], competitor: object[]}}
+ * @param {{id: number, sku: string, title: string, image: string|null, category?: string|null, evidence?: object[]}} product
+ * @returns {{image: string|null, sku: string, id: string, name: string, category: string|null, primary: object[], secondary: object[], longTail: object[], competitor: object[]}}
  */
 export function toSnapshotRow(product) {
   // Each category as its individual keywords, with the RESOURCE each came
   // from. The keyword VALUES are the application's own, unchanged.
-  const keywords = classifyKeywordTerms(product.title);
-  // t = the keyword, r = the resource it came from ('product-type',
-  // 'product-name', 'product-name-type', 'database', or null when unproven,
-  // in which case the cell shows no pill).
-  const terms = (name) => keywords[name].map(({ term, resource }) => ({ t: term, r: resource }));
+  //
+  // The third argument is the real records ledsone holds against this product,
+  // read by resources.js. They are what every tag in all four columns is
+  // earned from, so an exported file cannot attribute a keyword differently
+  // from the page it came from.
+  const keywords = classifyKeywordTerms(product.title, {}, product.evidence ?? []);
+  // t = the keyword; r = the real resource that supplied it ('amazon',
+  // 'ebay', 'shopify', 'bandq', 'google-search-console'), or null when nothing
+  // proves it, in which case the cell shows no pill.
+  const terms = (name) =>
+    keywords[name].map(({ term, resource, resourceLabel, resourceDetail }) => ({
+      t: term,
+      r: resource,
+      // l = the resource's real name as proven ("Amazon", "Electricalsone").
+      // d = the table and column it was proven from, shown as the tooltip.
+      l: resourceLabel,
+      d: resourceDetail,
+    }));
 
   return {
     image: typeof product.image === 'string' && product.image.trim() !== '' ? product.image.trim() : null,
@@ -189,15 +198,6 @@ export function toSnapshotRow(product) {
     // ledsone's own category, else one derived from the product name, else
     // null for a blank cell. Resolved by source.js; see categories.js.
     category: typeof product.category === 'string' && product.category.trim() !== '' ? product.category.trim() : null,
-    // ledsone's OWN stored product tags, every one the database holds for this
-    // product - not a sample, and not derived from anything. An empty array
-    // where the business recorded none; the cell is then blank. These are not
-    // the keyword RESOURCE pills carried in `r` below.
-    tags: Array.isArray(product.tags)
-      ? product.tags
-          .filter((tag) => typeof tag === 'string' && tag.trim() !== '')
-          .map((tag) => tag.trim())
-      : [],
     primary: terms('primary'),
     secondary: terms('secondary'),
     longTail: terms('longTail'),
@@ -275,48 +275,16 @@ function cell(text, className) {
   return td;
 }
 
-/* How many PRODUCT tag pills a cell draws before the rest go into a "+N" pill.
-   Every tag is in the data and every one is reachable - the overflow pill
-   names the remainder in its tooltip. This only stops a product with a hundred
-   tags making a row taller than the screen. */
-var TAGS_SHOWN = ${Number(TAGS_SHOWN)};
+/* The fallback name for each resource. Every keyword carries its own proven
+   name and tooltip (l and d), which is what actually gets shown; this list
+   only covers a row that somehow arrived without one, and it is filled in at
+   build time from the application's own list, so this file cannot name a
+   resource differently from the live page.
 
-/* The PRODUCT TAGS cell: ledsone's own stored tags, as small blue pills.
-   Different data from the keyword RESOURCE pills below, and in its own
-   column. A product with none gets a genuinely empty cell. */
-function tagsCell(tags) {
-  var td = document.createElement('td');
-  td.className = 'tags';
-  if (!tags || !tags.length) return td;
-
-  tags.slice(0, TAGS_SHOWN).forEach(function (tag) {
-    var pill = document.createElement('span');
-    pill.className = 'ptag';
-    /* textContent: a tag is product text and is never parsed as markup. */
-    pill.textContent = tag;
-    td.appendChild(pill);
-  });
-
-  var rest = tags.slice(TAGS_SHOWN);
-  if (rest.length) {
-    var more = document.createElement('span');
-    more.className = 'ptag ptag-more';
-    more.title = rest.join(', ');
-    more.textContent = '+' + rest.length.toLocaleString('en-GB');
-    td.appendChild(more);
-  }
-
-  return td;
-}
-
-/* The RESOURCE each keyword came from: its pill text, and its tooltip. Both
-   are filled in at build time from the application's own lists, so this file
-   cannot name a resource differently from the live page.
-
-   A resource is a PLACE ("Product Type", "Product Name", "Database"), never a
-   method. There is no "GEN" and no "Generated" here by design. */
-var RESOURCE_LABEL = ${serialiseData(RESOURCE_LABEL)};
-var RESOURCE_TITLE = ${serialiseData(RESOURCE_DESCRIPTION)};
+   A resource is a REAL PLACE the keyword came from - "Amazon", "eBay",
+   "Electricalsone", "Google Search Console". It is never a method: there is no
+   "GEN", no "Generated" and no "Product Type" here by design. */
+var SOURCE_LABEL = ${serialiseData(SOURCE_LABEL)};
 
 /* A keyword cell: each keyword as ordinary text on its own line, with a small
    coloured pill below it naming the resource it came from. The keyword itself
@@ -338,11 +306,12 @@ function keywordCell(terms) {
     /* The resource pill goes on the line BELOW the keyword. A keyword whose
        resource could not be established carries NO pill rather than a guessed
        one. */
-    if (RESOURCE_LABEL[entry.r]) {
+    var name = entry.l || SOURCE_LABEL[entry.r];
+    if (entry.r && name) {
       var tag = document.createElement('span');
       tag.className = 'tag tag-' + entry.r;
-      tag.title = RESOURCE_TITLE[entry.r] || RESOURCE_LABEL[entry.r];
-      tag.textContent = RESOURCE_LABEL[entry.r];
+      tag.title = entry.d || name;
+      tag.textContent = name;
       line.appendChild(tag);
     }
 
@@ -384,7 +353,6 @@ function drawRows(page) {
     tr.appendChild(cell(row.id, 'num'));
     tr.appendChild(cell(row.name, 'name'));
     tr.appendChild(cell(row.category, 'category'));
-    tr.appendChild(tagsCell(row.tags));
     tr.appendChild(keywordCell(row.primary));
     tr.appendChild(keywordCell(row.secondary));
     tr.appendChild(keywordCell(row.longTail));
@@ -546,7 +514,6 @@ export const COLUMNS = Object.freeze([
   'Product ID',
   'Product Name',
   'Category',
-  'Tags',
   'Primary Keyword',
   'Secondary Keywords',
   'Long-Tail Keywords',
@@ -583,8 +550,6 @@ export function buildSnapshotHtml({
 
   const categories = categoriesIn(rows);
   const withCategory = categories.reduce((sum, { count }) => sum + count, 0);
-  const withTags = rows.filter((row) => Array.isArray(row.tags) && row.tags.length > 0).length;
-  const tagCount = rows.reduce((sum, row) => sum + (Array.isArray(row.tags) ? row.tags.length : 0), 0);
 
   const headers = COLUMNS.map((name) => `            <th>${escapeHtml(name)}</th>`).join('\n');
 
@@ -655,19 +620,6 @@ export function buildSnapshotHtml({
   product name itself states. The filter above the table works entirely inside
   this file.
 
-  Product tags: ${tagCount.toLocaleString('en-GB')} in total across ${withTags.toLocaleString('en-GB')} of these products;
-  ${(rows.length - withTags).toLocaleString('en-GB')} have none and show a blank Tags cell. EVERY tag ledsone holds
-  for EVERY product in this file is carried in the data below - no product is
-  sampled and no tag list is truncated in the data. They are the business's own
-  stored tags from listings.shopify_listing_tag, reached through the listing
-  that carries the SKU and that listing's parent; nothing here derives, guesses
-  or invents a tag. A cell draws the first ${Number(TAGS_SHOWN)} as pills and names any remainder
-  in a "+N" pill's tooltip, so a product with a hundred tags cannot make one
-  row taller than the screen.
-
-  These PRODUCT TAGS are a different thing from the RESOURCE pills under each
-  keyword: the first is ledsone's own product data, the second names where
-  this application took a keyword's wording from.
 -->
 <style>
 ${styles}
@@ -718,9 +670,9 @@ button.btn:disabled { color: var(--muted); opacity: .55; cursor: default; border
 ${controls('top')}
 
     <!-- ================= PRODUCT KEYWORD TABLE =================
-         Ten columns, in the required order. The Tags column carries ledsone's
-         own stored product tags; there is no separate source column, because a
-         keyword's RESOURCE pill sits underneath the keyword itself. -->
+         Nine columns, in the required order. There is no separate source
+         column, because a keyword's RESOURCE pill sits underneath the keyword
+         itself, inside its own cell. -->
     <div class="table-scroll">
       <table>
         <thead>

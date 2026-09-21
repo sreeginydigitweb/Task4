@@ -32,6 +32,7 @@ import {
 } from './categories.js';
 import { INVENTORY_SCHEMA, LISTINGS_SCHEMA, firstRow, rows } from './db.js';
 import { keywordTermSources, resolveKeywordCategories } from './keyword-generator.js';
+import { evidenceForSkus } from './resources.js';
 
 /**
  * Products shown per page.
@@ -68,21 +69,20 @@ export function classifyKeywords(title, recorded = {}) {
  * Reports on the values `classifyKeywords` produces; it changes none of them.
  * See keywordTermSources for what 'db', 'gen' and 'mix' mean.
  *
- * `platform` is the third argument the generator needs for the PRIMARY
- * keyword's tag: the real marketplace this product is listed on, resolved from
- * a listing row by SKU in `findProductKeywordPage` and carried on the row as
- * `product.platform`. It is read from the database, never derived from the
- * title, and it is null for a product ledsone lists nowhere - in which case
- * the primary keyword shows no tag rather than a guessed one. See
- * PLATFORM_RESOURCE in keyword-generator.js.
+ * `evidence` is the third argument: every real record ledsone holds against
+ * this product - Amazon backend search keywords, Google Search Console
+ * queries, storefront titles and tags - read by resources.js and carried on
+ * the row as `product.evidence`. It is what the resource tag under EVERY
+ * keyword, in all four columns, is earned from. A keyword no record contains
+ * shows no tag at all rather than a generation method. See provenance.js.
  *
  * @param {unknown} title
  * @param {Partial<{primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}>} [recorded]
- * @param {string|null} [platform]  A PLATFORM_RESOURCE proven from a listing row.
+ * @param {Array<object>} [evidence]  Real records held against this product.
  * @returns {ReturnType<typeof keywordTermSources>}
  */
-export function classifyKeywordTerms(title, recorded = {}, platform = null) {
-  return keywordTermSources(title, recorded, platform);
+export function classifyKeywordTerms(title, recorded = {}, evidence = []) {
+  return keywordTermSources(title, recorded, evidence);
 }
 
 /**
@@ -272,7 +272,7 @@ export async function countProducts({ category = ALL_CATEGORIES, search = '' } =
  * @param {number} [options.page]      1-based page number.
  * @param {number} [options.pageSize]
  * @param {string} [options.category]  ALL_CATEGORIES for the whole catalogue.
- * @returns {Promise<Array<{id: number, sku: string, title: string, image: string|null, category: string|null, tags: string[]}>>}
+ * @returns {Promise<Array<{id: number, sku: string, title: string, image: string|null, category: string|null, tags: string[], evidence: object[]}>>}
  */
 export async function findProductKeywordPage({
   page = 1,
@@ -384,6 +384,11 @@ export async function findProductKeywordPage({
     pageParams,
   );
 
+  // THE RESOURCE EVIDENCE for the rows being shown: every real record ledsone
+  // holds against these SKUs, from resources.js. One batch of indexed lookups
+  // for the whole page. This is what every keyword's tag is earned from.
+  const evidence = await evidenceForSkus(found.map((row) => row.sku));
+
   return found.map((row) => ({
     id: row.id,
     sku: row.sku,
@@ -397,5 +402,10 @@ export async function findProductKeywordPage({
     // ledsone's own stored tags. An empty array when the business recorded
     // none - the view shows a blank cell rather than inventing one.
     tags: Array.isArray(row.tags) ? row.tags : [],
+    // The real records the resources hold against this product. Every resource
+    // tag in all four keyword columns is proven from these, or is not shown.
+    // An empty array where ledsone holds nothing; that product's keywords then
+    // carry no tags at all rather than invented ones.
+    evidence: evidence.get(row.sku) ?? [],
   }));
 }

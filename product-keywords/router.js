@@ -97,7 +97,13 @@ async function productKeywordsRoute(query) {
       // source of each, keeping title generation testable without a live
       // database. The keyword VALUES are unchanged - this only says where each
       // came from.
-      classify: (product) => classifyKeywordTerms(product.title, product.keywordCategories),
+      //
+      // `product.evidence` is the real records ledsone holds against this
+      // product, proven by resources.js. Every resource tag in all four
+      // columns is earned from these; a keyword none of them contains carries
+      // no tag at all.
+      classify: (product) =>
+        classifyKeywordTerms(product.title, product.keywordCategories, product.evidence ?? []),
     }),
   );
 }

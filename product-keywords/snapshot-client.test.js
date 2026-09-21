@@ -205,13 +205,13 @@ const product = (n, overrides = {}) => ({
   id: String(n),
   name: `Product ${n}`,
   category: `Category ${n}`,
-  // ledsone’s own stored product tags.
-  tags: [`Tag ${n}A`, `Tag ${n}B`],
-  // Each keyword category is its individual keywords, with the source of each.
-  primary: [{ t: `Primary ${n}`, r: 'product-type' }],
-  secondary: [{ t: `Secondary ${n}`, r: 'product-type' }],
-  longTail: [{ t: `LongTail ${n}`, r: 'product-type' }],
-  competitor: [{ t: `Competitor ${n}`, r: 'product-type' }],
+  // Each keyword category is its individual keywords, with the REAL RESOURCE
+  // that supplied each: r = the slug that picks the colour, l = the resource's
+  // proven name, d = the record it was proven from.
+  primary: [{ t: `Primary ${n}`, r: 'amazon', l: 'Amazon', d: 'listings.amazon_listings.title' }],
+  secondary: [{ t: `Secondary ${n}`, r: 'amazon', l: 'Amazon', d: 'listings.amazon_listings.title' }],
+  longTail: [{ t: `LongTail ${n}`, r: 'amazon', l: 'Amazon', d: 'listings.amazon_listings.title' }],
+  competitor: [{ t: `Competitor ${n}`, r: 'amazon', l: 'Amazon', d: 'listings.amazon_listings.title' }],
   ...overrides,
 });
 
@@ -229,11 +229,11 @@ test('the inline script runs and draws the first page', () => {
   assert.equal(rows[0].tagName, 'TR');
 });
 
-test('every drawn row has ten cells, in the column order', () => {
+test('every drawn row has nine cells, in the column order', () => {
   const { elements } = run(FIVE);
 
   for (const row of elements.rows.children) {
-    assert.equal(row.children.length, 10, 'ten cells per row');
+    assert.equal(row.children.length, 9, 'nine cells per row');
   }
 
   const first = elements.rows.children[0].children;
@@ -243,93 +243,12 @@ test('every drawn row has ten cells, in the column order', () => {
   assert.equal(first[3].textContent, 'Product 1');
   assert.equal(first[4].textContent, 'Category 1');
 
-  // The Tags cell: ledsone's own stored product tags, one pill each.
-  assert.equal(first[5].className, 'tags');
-  assert.equal(first[5].textContent, 'Tag 1ATag 1B');
-
-  // The four keyword cells hold the keyword plus its resource pill.
-  assert.equal(first[6].textContent, 'Primary 1Product Type');
-  assert.equal(first[7].textContent, 'Secondary 1Product Type');
-  assert.equal(first[8].textContent, 'LongTail 1Product Type');
-  assert.equal(first[9].textContent, 'Competitor 1Product Type');
-});
-
-// ---------------------------------------------------------------------------
-// The PRODUCT TAGS cell - ledsone's own stored tags, drawn as blue pills.
-//
-// Not the DB/GEN/MIX keyword source tags: different data, different column.
-// ---------------------------------------------------------------------------
-
-/** The Tags cell of the first drawn row. */
-const tagsCell = (elements) => elements.rows.children[0].children[5];
-
-test("a product's tags are drawn as pills in the Tags cell", () => {
-  const { elements } = run([
-    product(1, { tags: ['Door Handle', 'Brass', 'Cabinet Handle', 'Pull Handle'] }),
-    product(2),
-  ]);
-  const cell = tagsCell(elements);
-
-  assert.equal(cell.className, 'tags');
-  assert.deepEqual(
-    cell.children.map((pill) => pill.className),
-    ['ptag', 'ptag', 'ptag', 'ptag'],
-  );
-  assert.deepEqual(
-    cell.children.map((pill) => pill.textContent),
-    ['Door Handle', 'Brass', 'Cabinet Handle', 'Pull Handle'],
-  );
-});
-
-test('a product with no tags gets a genuinely empty Tags cell', () => {
-  for (const missing of [[], null, undefined]) {
-    const { elements } = run([product(1, { tags: missing }), product(2)]);
-    const cell = tagsCell(elements);
-
-    assert.equal(cell.children.length, 0, String(missing));
-    assert.equal(cell.textContent, '', 'no placeholder stands in for an absent tag');
-  }
-});
-
-test('a product tag is set as text, so markup in a tag cannot become elements', () => {
-  const { elements } = run([product(1, { tags: ['<b>bold</b><script>alert(1)</script>'] }), product(2)]);
-  const pill = tagsCell(elements).children[0];
-
-  assert.equal(pill.textContent, '<b>bold</b><script>alert(1)</script>');
-  assert.equal(pill.children.length, 0, 'no element was created from a tag');
-});
-
-test('a product with many tags keeps every one of them reachable', () => {
-  const many = Array.from({ length: 12 }, (_, at) => `Tag ${at + 1}`);
-  const { elements } = run([product(1, { tags: many }), product(2)]);
-  const cell = tagsCell(elements);
-
-  assert.equal(cell.children.length, 9, 'eight pills plus one overflow pill');
-  assert.deepEqual(cell.children.slice(0, 8).map((pill) => pill.textContent), many.slice(0, 8));
-
-  const more = cell.children[8];
-  assert.equal(more.className, 'ptag ptag-more');
-  assert.equal(more.textContent, '+4');
-  assert.equal(more.title, 'Tag 9, Tag 10, Tag 11, Tag 12', 'the rest are named, not dropped');
-});
-
-test('a product tag never carries a keyword source class', () => {
-  const { elements } = run([product(1), product(2)]);
-
-  for (const pill of tagsCell(elements).children) {
-    assert.ok(!String(pill.className).includes('tag-db'));
-    assert.ok(!String(pill.className).includes('tag-gen'));
-    assert.ok(!String(pill.className).includes('tag-mix'));
-  }
-});
-
-test('every product in the snapshot carries its own tags, not a shared sample', () => {
-  // Tags are per-product data. If they were ever hard-coded or taken from one
-  // example product, every row would show the same pills.
-  const { elements } = run(FIVE);
-  const drawn = elements.rows.children.map((row) => row.children[5].textContent);
-
-  assert.deepEqual(drawn, ['Tag 1ATag 1B', 'Tag 2ATag 2B']);
+  // The four keyword cells hold the keyword plus its resource pill, and they
+  // follow Category directly - there is no Tags cell between them.
+  assert.equal(first[5].textContent, 'Primary 1Amazon');
+  assert.equal(first[6].textContent, 'Secondary 1Amazon');
+  assert.equal(first[7].textContent, 'LongTail 1Amazon');
+  assert.equal(first[8].textContent, 'Competitor 1Amazon');
 });
 
 // ---------------------------------------------------------------------------
@@ -343,15 +262,16 @@ test('the tag sits below its keyword, each in its own block', () => {
   const { elements } = run([
     product(1, {
       secondary: [
-        { t: 'Door Pull', r: 'database' },
-        { t: 'Pull Handle', r: 'product-type' },
-        { t: 'Brass', r: 'product-name-type' },
+        { t: 'Door Pull', r: 'amazon', l: 'Amazon', d: 'amazon backend search keywords' },
+        { t: 'Pull Handle', r: 'google-search-console', l: 'Google Search Console', d: 'a real Google query' },
+        // A Shopify storefront is named after the business, not the platform.
+        { t: 'Brass', r: 'shopify', l: 'Electricalsone', d: 'a tag on the Electricalsone listing' },
       ],
     }),
     product(2),
   ]);
 
-  const lines = keywordLines(elements.rows.children[0].children[7]);
+  const lines = keywordLines(elements.rows.children[0].children[6]);
   assert.equal(lines.length, 3, 'one block per keyword');
 
   // Each .kw holds a .term block then a .tag block - keyword first, tag below.
@@ -366,40 +286,52 @@ test('the tag sits below its keyword, each in its own block', () => {
     lines.map((line) => line.children[0].textContent),
     ['Door Pull', 'Pull Handle', 'Brass'],
   );
-  // The pill names the RESOURCE - never GEN, never "Generated".
+  // The pill names the REAL RESOURCE - never GEN, never "Generated", never a
+  // method - and a storefront is named as the business it is.
   assert.deepEqual(
     lines.map((line) => line.children[1].textContent),
-    ['Database', 'Product Type', 'Product Name + Type'],
+    ['Amazon', 'Google Search Console', 'Electricalsone'],
   );
 });
 
 test('the keyword itself carries no colour class, only the pill does', () => {
   const { elements } = run([
-    product(1, { secondary: [{ t: 'Door Pull', r: 'database' }] }),
+    product(1, {
+      secondary: [
+        { t: 'Door Pull', r: 'amazon', l: 'Amazon', d: "Recorded in this product's Amazon backend search keywords" },
+      ],
+    }),
     product(2),
   ]);
-  const line = keywordLines(elements.rows.children[0].children[7])[0];
+  const line = keywordLines(elements.rows.children[0].children[6])[0];
 
   // The line is a plain .kw - no chip, no colour class, no background.
   assert.equal(line.className, 'kw');
 
   const tag = line.children.find((child) => String(child.className).startsWith('tag'));
-  assert.equal(tag.className, 'tag tag-database', 'the pill is the only thing classed by resource');
-  assert.equal(tag.textContent, 'Database');
-  assert.equal(tag.title, 'Recorded as a keyword value in the ledsone database');
+  assert.equal(tag.className, 'tag tag-amazon', 'the pill is the only thing classed by resource');
+  assert.equal(tag.textContent, 'Amazon');
+  assert.equal(tag.title, "Recorded in this product's Amazon backend search keywords");
 });
 
 test('each resource gets its own pill class and its own label', () => {
+  // Every real resource, including two storefronts that share the shopify
+  // colour but carry their own names.
   const expected = [
-    ['product-type', 'Product Type'],
-    ['product-name', 'Product Name'],
-    ['product-name-type', 'Product Name + Type'],
-    ['database', 'Database'],
+    ['amazon', 'Amazon'],
+    ['ebay', 'eBay'],
+    ['bandq', 'B&Q'],
+    ['google-search-console', 'Google Search Console'],
+    ['shopify', 'Electricalsone'],
+    ['shopify', 'Vintagelite'],
   ];
 
   for (const [resource, label] of expected) {
-    const { elements } = run([product(1, { primary: [{ t: 'Term', r: resource }] }), product(2)]);
-    const line = keywordLines(elements.rows.children[0].children[6])[0];
+    const { elements } = run([
+      product(1, { primary: [{ t: 'Term', r: resource, l: label, d: 'a real record' }] }),
+      product(2),
+    ]);
+    const line = keywordLines(elements.rows.children[0].children[5])[0];
     const tag = line.children.find((child) => String(child.className).startsWith('tag'));
 
     assert.equal(tag.className, `tag tag-${resource}`);
@@ -410,7 +342,7 @@ test('each resource gets its own pill class and its own label', () => {
 test('a keyword with unproven provenance gets NO pill in the snapshot either', () => {
   for (const resource of [null, undefined, 'nonsense']) {
     const { elements } = run([product(1, { primary: [{ t: 'Term', r: resource }] }), product(2)]);
-    const line = keywordLines(elements.rows.children[0].children[6])[0];
+    const line = keywordLines(elements.rows.children[0].children[5])[0];
 
     assert.equal(line.children[0].textContent, 'Term', 'the keyword is still shown');
     assert.equal(
@@ -435,7 +367,7 @@ test('the snapshot says GEN nowhere - not in its data, not in its script', () =>
 
 test('a keyword category with nothing in it is an empty cell, with no tag', () => {
   const { elements } = run([product(1, { longTail: [] }), product(2)]);
-  const cell = elements.rows.children[0].children[8];
+  const cell = elements.rows.children[0].children[7];
 
   assert.equal(cell.children.length, 0);
   assert.equal(cell.textContent, '');
@@ -443,13 +375,15 @@ test('a keyword category with nothing in it is an empty cell, with no tag', () =
 
 test('a keyword containing markup stays text, tag and all', () => {
   const { elements } = run([
-    product(1, { primary: [{ t: '<b>Lamp</b><script>alert(1)</script>', r: 'product-type' }] }),
+    product(1, {
+      primary: [{ t: '<b>Lamp</b><script>alert(1)</script>', r: 'amazon', l: 'Amazon', d: 'a real record' }],
+    }),
     product(2),
   ]);
-  const line = keywordLines(elements.rows.children[0].children[6])[0];
+  const line = keywordLines(elements.rows.children[0].children[5])[0];
 
   assert.equal(line.children[0].textContent, '<b>Lamp</b><script>alert(1)</script>');
-  assert.equal(line.children[1].textContent, 'Product Type');
+  assert.equal(line.children[1].textContent, 'Amazon');
   // Two spans only - the keyword made no elements of its own.
   assert.equal(line.children.filter((child) => child.tagName === 'SPAN').length, 2);
 });

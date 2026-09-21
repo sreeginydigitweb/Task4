@@ -32,17 +32,15 @@ const ROWS = [
     id: '1',
     name: 'Brass Pull and Push Door Handle',
     category: 'Door Handle',
-    tags: ['Door Handle', 'Brass', 'Cabinet Handle', 'Pull Handle'],
-    primary: [{ t: 'Door Handle', r: 'product-type' }],
+    primary: [{ t: 'Door Handle', r: 'amazon', l: 'Amazon', d: 'listings.amazon_listings.title' }],
     secondary: [
-      { t: 'Door Pull', r: 'product-type' },
-      { t: 'Pull Handle', r: 'product-type' },
-      // "Brass" is a word read out of the product's own name, so its resource
-      // is the Product Name, not the Product Type entry.
-      { t: 'Brass', r: 'product-name' },
+      { t: 'Door Pull', r: 'amazon', l: 'Amazon', d: 'listings.amazon_listings.title' },
+      { t: 'Pull Handle', r: 'google-search-console', l: 'Google Search Console', d: 'a real Google query' },
+      // Proven by a storefront, which is named as the business it is.
+      { t: 'Brass', r: 'shopify', l: 'Electricalsone', d: 'listings.shopify_listing_tag.tag' },
     ],
-    longTail: [{ t: 'Brass Door Handle', r: 'product-name-type' }],
-    competitor: [{ t: 'Cabinet Handle', r: 'product-type' }],
+    longTail: [{ t: 'Brass Door Handle', r: null, l: null, d: null }],
+    competitor: [{ t: 'Cabinet Handle', r: 'amazon', l: 'Amazon', d: 'listings.amazon_listings.title' }],
   },
   {
     image: null,
@@ -50,11 +48,11 @@ const ROWS = [
     id: '390',
     name: 'Decorative Black Glossy Main Plug One Gang Switch',
     category: null,
-    tags: [],
-    primary: [{ t: 'Light Switch', r: 'product-type' }],
-    secondary: [{ t: 'Wall Switch', r: 'product-type' }],
-    longTail: [{ t: 'Black Light Switch', r: 'product-type' }],
-    competitor: [{ t: 'Light Switch Cover', r: 'product-type' }],
+    // A product nothing proves: every keyword shows, none wears a tag.
+    primary: [{ t: 'Light Switch', r: null, l: null, d: null }],
+    secondary: [{ t: 'Wall Switch', r: null, l: null, d: null }],
+    longTail: [{ t: 'Black Light Switch', r: null, l: null, d: null }],
+    competitor: [{ t: 'Light Switch Cover', r: null, l: null, d: null }],
   },
 ];
 
@@ -123,7 +121,7 @@ test('the JavaScript is inline, and is the whole of what the page needs', () => 
 // The columns.
 // ---------------------------------------------------------------------------
 
-test('the snapshot has all ten headers, in the required order', () => {
+test('the snapshot has all nine headers, in the required order', () => {
   const headings = [...snapshot().matchAll(/<th>(.*?)<\/th>/g)].map((match) => match[1]);
 
   assert.deepEqual(headings, [
@@ -132,13 +130,42 @@ test('the snapshot has all ten headers, in the required order', () => {
     'Product ID',
     'Product Name',
     'Category',
-    'Tags',
     'Primary Keyword',
     'Secondary Keywords',
     'Long-Tail Keywords',
     'Competitor Keywords',
   ]);
   assert.deepEqual(headings, COLUMNS);
+});
+
+test('the snapshot has no Tags column, and no tag data left behind to feed one', () => {
+  const html = snapshot();
+  const headings = [...html.matchAll(/<th>(.*?)<\/th>/g)].map((match) => match[1]);
+
+  assert.equal(headings.length, 9, 'nine columns, no more');
+  assert.ok(!headings.some((heading) => /^tags?$/i.test(heading)), 'no Tags header');
+
+  // The row data carried tags only to fill that column, so it carries none now
+  // - a snapshot shipping data nothing can draw is just weight in the file.
+  for (const row of embeddedData(html)) {
+    assert.ok(!('tags' in row), 'no orphaned tag data on a row');
+  }
+
+  // And nothing is left that could draw one.
+  assert.ok(!html.includes('class="ptag"'), 'no product-tag pill markup');
+  assert.ok(!html.includes('.ptag {'), 'no product-tag styling');
+});
+
+test('a keyword resource pill still sits inside its keyword cell', () => {
+  // Removing the Tags column must not disturb the provenance pills: they live
+  // under their own keyword, inside the keyword cell, exactly as before.
+  const row = embeddedData(snapshot())[0];
+
+  assert.deepEqual(row.primary, [
+    { t: 'Door Handle', r: 'amazon', l: 'Amazon', d: 'listings.amazon_listings.title' },
+  ]);
+  assert.equal(row.secondary[1].l, 'Google Search Console');
+  assert.equal(row.secondary[2].l, 'Electricalsone', 'a storefront keeps its business name');
 });
 
 test('the table structure is in the file, with a tbody for the rows', () => {
@@ -176,8 +203,12 @@ test('real product data is embedded in the file', () => {
   assert.equal(data[0].sku, 'HLBP128BB');
   assert.equal(data[0].id, '1');
   assert.equal(data[0].name, 'Brass Pull and Push Door Handle');
-  assert.deepEqual(data[0].primary, [{ t: 'Door Handle', r: 'product-type' }]);
-  assert.deepEqual(data[0].competitor, [{ t: 'Cabinet Handle', r: 'product-type' }]);
+  assert.deepEqual(data[0].primary, [
+    { t: 'Door Handle', r: 'amazon', l: 'Amazon', d: 'listings.amazon_listings.title' },
+  ]);
+  assert.deepEqual(data[0].competitor, [
+    { t: 'Cabinet Handle', r: 'amazon', l: 'Amazon', d: 'listings.amazon_listings.title' },
+  ]);
 });
 
 test('every row carries all ten column values', () => {
@@ -192,44 +223,8 @@ test('every row carries all ten column values', () => {
       'primary',
       'secondary',
       'sku',
-      'tags',
     ]);
   }
-});
-
-test("every product's own tags are embedded, and a product with none gets an empty list", () => {
-  const data = embeddedData(snapshot());
-
-  assert.deepEqual(data[0].tags, ['Door Handle', 'Brass', 'Cabinet Handle', 'Pull Handle']);
-  assert.deepEqual(data[1].tags, [], 'no tag is invented for a product that has none');
-});
-
-test('toSnapshotRow carries ledsone tags through unchanged, trimming and dropping blanks', () => {
-  const row = toSnapshotRow({
-    id: 1,
-    sku: 'HLBP128BB',
-    title: 'Brass Door Handle',
-    image: null,
-    category: 'Door Handle',
-    // As the database hands them over: the stored values carry leading spaces.
-    tags: [' Handles', 'Brass ', '   ', ''],
-  });
-
-  assert.deepEqual(row.tags, ['Handles', 'Brass']);
-});
-
-test('a product with no tags field at all becomes an empty list, not undefined', () => {
-  const row = toSnapshotRow({ id: 2, sku: 'X', title: 'A product', image: null });
-
-  assert.deepEqual(row.tags, []);
-});
-
-test('the file says how many of its products carry tags', () => {
-  const html = snapshot();
-
-  assert.match(html, /Product tags: 4 in total across 1 of these products/);
-  assert.match(html, /1 have none and show a blank Tags cell/);
-  assert.match(html, /no product is\s+sampled and no tag list is truncated in the data/);
 });
 
 test('a product image address is embedded, and a missing one stays null', () => {
@@ -380,16 +375,112 @@ test('a snapshot row takes its keywords from the application classifier', () => 
   // Each category is its individual keywords, with the source of each. The
   // VALUES are the application's own, unchanged.
   // s = the tag, i = the input that produced the keyword.
-  assert.deepEqual(row.primary, [{ t: 'Pendant Light', r: 'product-type' }]);
+  //
+  // Every tag, in all four categories, names a real resource proven from a
+  // real record. This row carries NO evidence at all, so no keyword earns a
+  // tag - and none is invented. A blank tag is the honest outcome.
+  const untagged = (t) => ({ t, r: null, l: null, d: null });
+
+  assert.deepEqual(row.primary, [untagged('Pendant Light')]);
+  assert.deepEqual(row.secondary, [untagged('Hanging Light'), untagged('Pendant Lamp')]);
+  assert.deepEqual(row.longTail, [untagged('Pendant Ceiling Light')]);
+  assert.deepEqual(row.competitor, [untagged('Ceiling Pendant'), untagged('Hanging Lamp')]);
+});
+
+test('a snapshot row tags every column from the real records held against the product', () => {
+  // Evidence is what resources.js read from ledsone. Each record carries the
+  // resource, the name to show, and the table it came from.
+  const evidence = [
+    {
+      source: 'amazon',
+      label: 'Amazon',
+      kind: 'search-keywords',
+      detail: 'listings.amazon_listing_search_engine_keywords.keyword',
+      text: 'pendant light fittings and hanging light shades',
+    },
+    {
+      source: 'shopify',
+      label: 'Vintagelite',
+      kind: 'tag',
+      detail: 'listings.shopify_listing_tag.tag',
+      text: 'Ceiling Pendant',
+    },
+  ];
+
+  const row = toSnapshotRow({ id: 9, sku: 'PL1', title: 'Pendant Light', image: null, evidence });
+
+  // The tooltip names the table AND quotes the record that actually matched,
+  // so the reader can check the tag against the row that justifies it.
+  const amazonKeywords =
+    'listings.amazon_listing_search_engine_keywords.keyword: ' +
+    '"pendant light fittings and hanging light shades"';
+
+  // Primary and one secondary appear in Amazon's backend keywords.
+  assert.deepEqual(row.primary, [
+    { t: 'Pendant Light', r: 'amazon', l: 'Amazon', d: amazonKeywords },
+  ]);
   assert.deepEqual(row.secondary, [
-    { t: 'Hanging Light', r: 'product-type' },
-    { t: 'Pendant Lamp', r: 'product-type' },
+    { t: 'Hanging Light', r: 'amazon', l: 'Amazon', d: amazonKeywords },
+    // "Pendant Lamp" is in neither record, so it earns nothing.
+    { t: 'Pendant Lamp', r: null, l: null, d: null },
   ]);
-  assert.deepEqual(row.longTail, [{ t: 'Pendant Ceiling Light', r: 'product-type' }]);
+  // The competitor term is proven by a storefront, which is named as the
+  // business rather than as the platform it runs on.
   assert.deepEqual(row.competitor, [
-    { t: 'Ceiling Pendant', r: 'product-type' },
-    { t: 'Hanging Lamp', r: 'product-type' },
+    {
+      t: 'Ceiling Pendant',
+      r: 'shopify',
+      l: 'Vintagelite',
+      d: 'listings.shopify_listing_tag.tag: "Ceiling Pendant"',
+    },
+    { t: 'Hanging Lamp', r: null, l: null, d: null },
   ]);
+});
+
+test('a snapshot row never invents a resource for any column', () => {
+  // Evidence that mentions none of the keywords proves none of them. A word
+  // that merely shares a record's subject is not a word that record supplied.
+  const evidence = [
+    {
+      source: 'ebay',
+      label: 'eBay',
+      kind: 'listing-title',
+      detail: 'listings.ebay_listings.title',
+      text: 'Solid Brass Door Knocker Antique Finish',
+    },
+  ];
+
+  for (const supplied of [evidence, [], null, undefined]) {
+    const row = toSnapshotRow({ id: 9, sku: 'PL1', title: 'Pendant Light', image: null, evidence: supplied });
+
+    for (const column of ['primary', 'secondary', 'longTail', 'competitor']) {
+      for (const entry of row[column]) {
+        assert.equal(entry.r, null, `${column} "${entry.t}" must carry no resource`);
+        assert.equal(entry.l, null, 'and no label');
+      }
+    }
+  }
+});
+
+test('a scattered word match never earns a resource', () => {
+  // "Cupboard Handle" is NOT proven by "Kitchen Cupboard Wardrobe Door
+  // Handles": both words are present but they describe different things. Only
+  // a consecutive phrase counts.
+  const evidence = [
+    {
+      source: 'amazon',
+      label: 'Amazon',
+      kind: 'listing-title',
+      detail: 'listings.amazon_listings.title',
+      text: '128mm Brass Cabinet Handles | Kitchen Cupboard Wardrobe Door Handles',
+    },
+  ];
+
+  const row = toSnapshotRow({ id: 1, sku: 'HLBP128BB', title: 'Brass Door Handle', image: null, evidence });
+  const byTerm = new Map(row.competitor.map((entry) => [entry.t, entry.r]));
+
+  assert.equal(byTerm.get('Cabinet Handle'), 'amazon', 'a real consecutive phrase is proven');
+  assert.equal(byTerm.get('Cupboard Handle'), null, 'scattered words prove nothing');
 });
 
 test('a snapshot row keeps the product name and identifiers as they are', () => {

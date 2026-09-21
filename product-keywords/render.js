@@ -50,7 +50,7 @@ import { fileURLToPath } from 'node:url';
 // Constant lookups, not a data source: the name and the explanation of each
 // keyword RESOURCE, kept in one place so the page and the generator cannot
 // describe a resource differently.
-import { RESOURCE_DESCRIPTION, RESOURCE_LABEL } from './keyword-generator.js';
+import { SOURCE_LABEL } from './provenance.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -180,23 +180,33 @@ ${body}
 /**
  * The RESOURCE pill for one keyword, or nothing.
  *
- * The pill names the real place the word came from - "Product Type",
- * "Product Name", "Database" - never how it was arrived at. There is no "GEN"
- * and no "Generated": that would describe a method and tell the reader nothing
- * about where to go and check the word.
+ * The pill names the REAL DATA RESOURCE the keyword came from - "Amazon",
+ * "eBay", "Electricalsone", "Google Search Console" - proven by a real record
+ * held against this product. It is never "GEN", "Generated", "Terminology",
+ * "Product Name" or "Product Type": those describe how the wording was
+ * produced, which is a different question and not the one the tag answers.
  *
- * A term whose resource could not be established carries NO pill at all.
- * Picking one would be inventing provenance, which is worse than saying
- * nothing.
+ * The LABEL travels with the keyword rather than being looked up here, because
+ * one resource is not one name: ledsone runs several Shopify storefronts, and
+ * a keyword proven from the Electricalsone storefront says "Electricalsone".
+ * The slug only picks the colour, so the palette stays a fixed, small set.
  *
- * @param {string|null|undefined} resource  A RESOURCE value from the generator.
+ * The tooltip is the exact table and column the word was found in, so any tag
+ * on the page can be checked against the row that justifies it.
+ *
+ * A keyword nothing proves carries NO pill at all. Picking one would be
+ * inventing provenance, which is worse than saying nothing.
+ *
+ * @param {{resource: string|null, resourceLabel: string|null, resourceDetail: string|null}} term
  * @returns {string}
  */
-function resourceTag(resource) {
-  const label = RESOURCE_LABEL[resource];
-  if (label === undefined) return '';
+function resourceTag({ resource, resourceLabel, resourceDetail }) {
+  if (typeof resource !== 'string' || resource === '') return '';
 
-  const why = RESOURCE_DESCRIPTION[resource] ?? label;
+  const label = resourceLabel ?? SOURCE_LABEL[resource];
+  if (typeof label !== 'string' || label.trim() === '') return '';
+
+  const why = resourceDetail ?? label;
   return `<span class="tag tag-${escapeHtml(resource)}" title="${escapeHtml(why)}">${escapeHtml(label)}</span>`;
 }
 
@@ -210,7 +220,7 @@ function resourceTag(resource) {
  *
  * A category with nothing to show is an actual empty HTML cell.
  *
- * @param {Array<{term: string, resource: string|null}>|undefined} terms
+ * @param {Array<{term: string, resource: string|null, resourceLabel: string|null, resourceDetail: string|null}>|undefined} terms
  * @returns {string}
  */
 function categoryCell(terms) {
@@ -220,62 +230,17 @@ function categoryCell(terms) {
 
   const keywords = terms
     .map(
-      ({ term, resource }) =>
+      (entry) =>
         // Two blocks: the keyword, then its resource pill on the line BELOW
         // it. The keyword is plain text; only the pill is coloured.
         '<span class="kw">' +
-        `<span class="term">${escapeHtml(term)}</span>` +
-        resourceTag(resource) +
+        `<span class="term">${escapeHtml(entry.term)}</span>` +
+        resourceTag(entry) +
         '</span>',
     )
     .join('');
 
   return `<td>${keywords}</td>`;
-}
-
-/**
- * How many product tags a cell shows before the rest go into a "+N" pill.
- *
- * Not a limit on the DATA - every tag ledsone holds for the product is passed
- * in, and every one is reachable from the cell. It is a limit on the height of
- * a table row: products carry a median of 14 tags and as many as 132, and a
- * row a hundred pills tall makes the table unusable. The overflow pill names
- * the remainder in its tooltip, so nothing is dropped or hidden.
- */
-export const TAGS_SHOWN = 8;
-
-/**
- * The PRODUCT TAGS cell.
- *
- * These are ledsone's own stored tags for the product, shown as small blue
- * pills. They are NOT the keyword RESOURCE pills - different data,
- * different column, different colour - and nothing here derives a tag from
- * anything. A product the business recorded no tags against gets a genuinely
- * empty cell: no placeholder, no tag borrowed from the product name.
- *
- * @param {string[]|null|undefined} tags  ledsone's tags, already de-duplicated.
- * @returns {string}
- */
-function tagsCell(tags) {
-  const values = Array.isArray(tags) ? tags.filter((tag) => typeof tag === 'string' && tag.trim() !== '') : [];
-
-  if (values.length === 0) {
-    return '<td class="tags"></td>';
-  }
-
-  const pills = values
-    .slice(0, TAGS_SHOWN)
-    .map((tag) => `<span class="ptag">${escapeHtml(tag.trim())}</span>`)
-    .join('');
-
-  const rest = values.slice(TAGS_SHOWN);
-  const more =
-    rest.length === 0
-      ? ''
-      : `<span class="ptag ptag-more" title="${escapeHtml(rest.map((tag) => tag.trim()).join(', '))}">` +
-        `+${number(rest.length)}</span>`;
-
-  return `<td class="tags">${pills}${more}</td>`;
 }
 
 /**
@@ -389,10 +354,10 @@ function categoryOptions(categories, selected, total) {
  * database a page at a time. Each is exactly ten cells, in the order page.html
  * heads them, and every value passes through escapeHtml. A keyword category
  * with nothing to show is an empty cell, never placeholder text, and so is a
- * product the database holds no image, no category or no tags for.
+ * product the database holds no image or no category for.
  *
  * @param {object} options
- * @param {Array<{id: number, sku: string, title: string, image?: string|null, category?: string|null, tags?: string[]}>} options.products
+ * @param {Array<{id: number, sku: string, title: string, image?: string|null, category?: string|null}>} options.products
  * @param {number} options.total     Products in the catalogue.
  * @param {number} options.page      1-based.
  * @param {number} options.pageCount
@@ -428,7 +393,6 @@ export function renderProductKeywordsPage({
         (productCategory === null || productCategory === ''
           ? '<td class="category"></td>'
           : `<td class="category">${escapeHtml(productCategory)}</td>`) +
-        tagsCell(product.tags) +
         categoryCell(keywords.primary) +
         categoryCell(keywords.secondary) +
         categoryCell(keywords.longTail) +

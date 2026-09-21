@@ -20,7 +20,7 @@ import {
   renderProductKeywordsPage,
   renderReadOnlyPage,
 } from './render.js';
-import { RESOURCE_LABEL } from './keyword-generator.js';
+import { SOURCE_LABEL } from './provenance.js';
 
 /** product-keywords/page.html - the UI file the application fills in. */
 const TEMPLATE = readFileSync(new URL('./page.html', import.meta.url), 'utf8');
@@ -33,9 +33,15 @@ const nothingKnown = () => ({
   competitor: [],
 });
 
-/** One keyword per category - the shape classify returns. `resource` names
-    the place the word came from; it is what the page shows. */
-const term = (t, resource = 'product-type') => [{ term: t, resource }];
+/** One keyword per category - the shape classify returns.
+ *
+ * `resource` is the REAL resource that supplied the word, `resourceLabel` the
+ * name shown on its pill and `resourceDetail` the record it was proven from.
+ * Those three are what the renderer actually receives.
+ */
+const term = (t, resource = 'amazon', resourceLabel = 'Amazon') => [
+  { term: t, resource, resourceLabel, resourceDetail: `Proven from a real ${resourceLabel} record` },
+];
 
 const oneProduct = [{ id: 8, sku: 'LHAHE27RO', title: 'Vintage Lamp Holder' }];
 
@@ -69,24 +75,23 @@ test('number groups thousands for reading', () => {
   assert.equal(number(44599), '44,599');
 });
 
-/** The ten columns, in the order the requirement sets. */
+/** The nine columns, in the order the requirement sets. */
 const COLUMNS = [
   'Product Image',
   'SKU',
   'Product ID',
   'Product Name',
   'Category',
-  'Tags',
   'Primary Keyword',
   'Secondary Keywords',
   'Long-Tail Keywords',
   'Competitor Keywords',
 ];
 
-/** Where the four keyword cells start, after image/sku/id/name/category/tags. */
-const FIRST_KEYWORD_CELL = 6;
+/** Where the four keyword cells start, after image/sku/id/name/category. */
+const FIRST_KEYWORD_CELL = 5;
 
-test('the table contains exactly the ten requested columns, in the requested order', () => {
+test('the table contains exactly the nine requested columns, in the requested order', () => {
   const html = page();
   const headings = [...html.matchAll(/<th>(.*?)<\/th>/g)].map((match) => match[1]);
 
@@ -125,7 +130,7 @@ test("a product's category is shown in its own cell, after the product name", ()
   const row = /<tbody>[\s\S]*?<tr>([\s\S]*?)<\/tr>/.exec(html)?.[1] ?? '';
   const cells = [...row.matchAll(/<td(?: [^>]*)?>([\s\S]*?)<\/td>/g)].map((match) => match[1]);
 
-  assert.equal(cells.length, 10);
+  assert.equal(cells.length, 9);
   assert.equal(cells[4], 'Pendant Lighting');
   assert.ok(html.includes('<td class="category">Pendant Lighting</td>'));
 });
@@ -136,103 +141,13 @@ test('a product with no category gets a blank cell, not a placeholder', () => {
     const row = /<tbody>[\s\S]*?<tr>([\s\S]*?)<\/tr>/.exec(html)?.[1] ?? '';
     const cells = [...row.matchAll(/<td(?: [^>]*)?>([\s\S]*?)<\/td>/g)].map((match) => match[1]);
 
-    assert.equal(cells.length, 10, String(missing));
+    assert.equal(cells.length, 9, String(missing));
     assert.equal(cells[4], '', 'the category cell is genuinely empty');
     assert.ok(html.includes('<td class="category"></td>'));
     for (const placeholder of ['Uncategorised', 'Unknown', 'N/A', 'None']) {
       assert.ok(!html.includes(placeholder), `${placeholder} must not appear`);
     }
   }
-});
-
-// ---------------------------------------------------------------------------
-// The PRODUCT TAGS column - ledsone's own stored tags.
-//
-// These are not the DB/GEN/MIX keyword source tags. Different data, different
-// column, different colour. The tests below hold that line.
-// ---------------------------------------------------------------------------
-
-/** A product carrying ledsone's own tags. */
-const withTags = (tags) =>
-  page({ products: [{ id: 1, sku: 'HLBP128BB', title: 'Brass Door Handle', tags }] });
-
-test("a product's tags are shown as pills in the Tags cell, after Category", () => {
-  const html = withTags(['Door Handle', 'Brass', 'Cabinet Handle', 'Pull Handle']);
-  const cells = firstRowCells(html);
-
-  assert.equal(cells.length, 10);
-  assert.equal(
-    cells[5],
-    '<span class="ptag">Door Handle</span><span class="ptag">Brass</span>' +
-      '<span class="ptag">Cabinet Handle</span><span class="ptag">Pull Handle</span>',
-  );
-  assert.ok(html.includes('<td class="tags">'), 'the cell is the Tags cell');
-});
-
-test('a product with no tags gets a blank cell, not a placeholder', () => {
-  for (const missing of [[], null, undefined]) {
-    const cells = firstRowCells(withTags(missing));
-
-    assert.equal(cells.length, 10, String(missing));
-    assert.equal(cells[5], '', 'the tags cell is genuinely empty');
-    assert.ok(withTags(missing).includes('<td class="tags"></td>'));
-  }
-
-  // Nothing is ever substituted for an absent tag.
-  for (const placeholder of ['Untagged', 'No tags', 'N/A', 'Uncategorised']) {
-    assert.ok(!withTags([]).includes(placeholder), `${placeholder} must not appear`);
-  }
-});
-
-test('blank and whitespace-only tags are dropped rather than shown as empty pills', () => {
-  const cells = firstRowCells(withTags(['Handles', '   ', '', 'Brass']));
-
-  assert.equal(cells[5], '<span class="ptag">Handles</span><span class="ptag">Brass</span>');
-});
-
-test('a product tag is escaped before it reaches the page', () => {
-  const html = withTags(['<b>Brass</b> & "co"']);
-
-  assert.ok(!html.includes('<b>Brass</b>'), 'a tag must not inject markup');
-  assert.ok(html.includes('&lt;b&gt;Brass&lt;/b&gt; &amp; &quot;co&quot;'));
-});
-
-test('a product with more tags than fit keeps every one of them reachable', () => {
-  // The extras are not dropped: they are named in the overflow pill's tooltip,
-  // so a row cannot grow a hundred pills tall and no tag is lost.
-  const many = Array.from({ length: 12 }, (_, at) => `Tag ${at + 1}`);
-  const cells = firstRowCells(withTags(many));
-
-  const pills = [...cells[5].matchAll(/<span class="ptag">([^<]*)<\/span>/g)].map((match) => match[1]);
-  assert.deepEqual(pills, many.slice(0, 8), 'the first eight are drawn as pills');
-
-  const more = /<span class="ptag ptag-more" title="([^"]*)">([^<]*)<\/span>/.exec(cells[5]);
-  assert.ok(more, 'the remainder gets an overflow pill');
-  assert.equal(more[2], '+4');
-  assert.equal(more[1], 'Tag 9, Tag 10, Tag 11, Tag 12', 'and names every remaining tag');
-});
-
-test('exactly the display limit of tags needs no overflow pill', () => {
-  const eight = Array.from({ length: 8 }, (_, at) => `Tag ${at + 1}`);
-
-  assert.ok(!firstRowCells(withTags(eight))[5].includes('ptag-more'));
-});
-
-test('product tags are blue pills, and never a DB/GEN/MIX source tag', () => {
-  const styles = /<style>([\s\S]*?)<\/style>/.exec(TEMPLATE)?.[1] ?? '';
-
-  // Blue ink on a blue ground, rounded, small, compact, with spacing between.
-  assert.match(styles, /--ptag-bg: #e4eefa;/, 'a blue ground');
-  assert.match(styles, /--ptag-ink: #14507f;/, 'blue text');
-  assert.match(styles, /\.ptag \{[^}]*border-radius: 999px;/, 'a pill');
-  assert.match(styles, /\.ptag \{[^}]*font-size: 11px;/, 'small');
-  assert.match(styles, /\.ptag \{[^}]*padding: 2px 8px;/, 'compact');
-  assert.match(styles, /\.ptag \{[^}]*margin: 0 4px 4px 0;/, 'spaced apart');
-
-  // A product tag never carries a source class, and the two are separate rules.
-  const html = withTags(['Brass']);
-  assert.ok(!html.includes('<span class="ptag tag-'), 'a product tag is not a source tag');
-  assert.ok(!/\.ptag \{[^}]*var\(--tag-(db|gen|mix)\)/.test(styles), 'and takes none of their colours');
 });
 
 test('a category from the database is escaped before it reaches the page', () => {
@@ -354,9 +269,31 @@ const tagged = () =>
     classify: () => ({
       primary: term('Door Handle'),
       secondary: [
-        { term: 'Door Pull', resource: 'product-type' },
-        { term: 'Pull Handle', resource: 'product-name' },
-        { term: 'Brass', resource: 'database' },
+        {
+          term: 'Door Pull',
+          resource: 'amazon',
+          resourceLabel: 'Amazon',
+          resourceDetail:
+            "Recorded in this product's Amazon backend search keywords " +
+            '(listings.amazon_listing_search_engine_keywords.keyword)',
+        },
+        {
+          term: 'Pull Handle',
+          resource: 'google-search-console',
+          resourceLabel: 'Google Search Console',
+          resourceDetail:
+            "A real Google search query recorded against this product's page " +
+            '(google_search_console.query_page.query)',
+        },
+        {
+          // A Shopify storefront is named after the business, not the platform.
+          term: 'Brass',
+          resource: 'shopify',
+          resourceLabel: 'Electricalsone',
+          resourceDetail:
+            "Filed as a tag on this product's Electricalsone listing " +
+            '(listings.shopify_listing_tag.tag)',
+        },
       ],
       longTail: term('Brass Door Handle'),
       competitor: term('Cabinet Handle'),
@@ -364,14 +301,16 @@ const tagged = () =>
   });
 
 test('the resource pill sits BELOW its keyword, not beside it', () => {
-  const cell = firstRowCells(tagged())[7];
+  const cell = firstRowCells(tagged())[6];
 
   // Keyword and pill are separate blocks inside one .kw, the keyword first.
-  assert.ok(cell.includes('<span class="term">Door Pull</span><span class="tag tag-product-type"'));
-  assert.ok(cell.includes('<span class="term">Pull Handle</span><span class="tag tag-product-name"'));
-  assert.ok(cell.includes('<span class="term">Brass</span><span class="tag tag-database"'));
+  assert.ok(cell.includes('<span class="term">Door Pull</span><span class="tag tag-amazon"'));
+  assert.ok(
+    cell.includes('<span class="term">Pull Handle</span><span class="tag tag-google-search-console"'),
+  );
+  assert.ok(cell.includes('<span class="term">Brass</span><span class="tag tag-shopify"'));
 
-  // Never "Door Pull [Product Type]" running along one line.
+  // Never "Door Pull [Amazon]" running along one line.
   assert.ok(!/Door Pull <span class="tag/.test(cell), 'the pill must not follow inline');
   assert.equal([...cell.matchAll(/<span class="kw">/g)].length, 3, 'one block per keyword');
 });
@@ -386,10 +325,12 @@ test('the keyword and its tag are each their own line', () => {
 });
 
 test('the pill names the RESOURCE, and never says GEN or Generated', () => {
-  const cell = firstRowCells(tagged())[7];
+  const cell = firstRowCells(tagged())[6];
   const tags = [...cell.matchAll(/<span class="tag tag-[\w-]+"[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]);
 
-  assert.deepEqual(tags, ['Product Type', 'Product Name', 'Database']);
+  // Every one is a real place a reader could go and check, and the Shopify
+  // storefront is named as the business rather than as the platform.
+  assert.deepEqual(tags, ['Amazon', 'Google Search Console', 'Electricalsone']);
 });
 
 test('the word GEN reaches the reader nowhere on the page', () => {
@@ -417,14 +358,18 @@ test('every resource the generator can report has a label and a colour', () => {
   // A resource with no label would render no pill and silently lose provenance.
   const styles = /<style>([\s\S]*?)<\/style>/.exec(TEMPLATE)?.[1] ?? '';
 
-  for (const [resource, label] of Object.entries(RESOURCE_LABEL)) {
+  for (const [resource, label] of Object.entries(SOURCE_LABEL)) {
     const html = page({
       products: [{ id: 1, sku: 'X', title: 'A product' }],
       classify: () => ({ primary: [{ term: 'Something', resource }], secondary: [], longTail: [], competitor: [] }),
     });
 
+    // The label is compared ESCAPED, because that is what a correct renderer
+    // writes: "B&Q" reaches the page as "B&amp;Q" and displays as "B&Q".
+    const escaped = label.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
     assert.ok(html.includes(`<span class="tag tag-${resource}"`), `${resource} renders a pill`);
-    assert.ok(html.includes(`>${label}</span>`), `${resource} is labelled "${label}"`);
+    assert.ok(html.includes(`>${escaped}</span>`), `${resource} is labelled "${label}"`);
     assert.match(styles, new RegExp(`\\.tag-${resource} \\{ background: var\\(--tag-${resource}\\); \\}`));
     assert.match(styles, new RegExp(`--tag-${resource}: #[0-9a-f]{6};`), `${resource} has a colour`);
   }
@@ -448,7 +393,7 @@ test('a keyword whose resource cannot be established gets no pill', () => {
 });
 
 test('the keyword itself carries no colour, chip or background', () => {
-  const cell = firstRowCells(tagged())[7];
+  const cell = firstRowCells(tagged())[6];
 
   // The keyword line is a plain .kw with no source class of its own; only the
   // tag inside it is classed by source.
@@ -466,13 +411,13 @@ test('only the tag is coloured, and the keyword text is not', () => {
   assert.ok(!/\.kw \.term \{[^}]*background:/.test(styles), 'no background on keyword text');
 
   // The pill's COLOUR is a background, and only the resource rules set one.
-  assert.match(styles, /\.tag-product-type \{ background: var\(--tag-product-type\); \}/);
-  assert.match(styles, /\.tag-product-name \{ background: var\(--tag-product-name\); \}/);
-  assert.match(styles, /\.tag-database \{ background: var\(--tag-database\); \}/);
+  assert.match(styles, /\.tag-amazon \{ background: var\(--tag-amazon\); \}/);
+  assert.match(styles, /\.tag-ebay \{ background: var\(--tag-ebay\); \}/);
+  assert.match(styles, /\.tag-google-search-console \{ background: var\(--tag-google-search-console\); \}/);
 
   // ONE COLOUR PER RESOURCE TYPE, never per keyword - and all four distinct,
   // so the reader can tell the resources apart at a glance.
-  const colours = Object.keys(RESOURCE_LABEL).map(
+  const colours = Object.keys(SOURCE_LABEL).map(
     (resource) => new RegExp(`--tag-${resource}: (#[0-9a-f]{6});`).exec(styles)?.[1],
   );
   assert.ok(colours.every(Boolean), 'every resource has a colour');
@@ -492,21 +437,24 @@ test('the tag is small', () => {
   assert.ok(Number(size) <= 11, `the tag should be small, got ${size}px`);
 });
 
-test('there is no separate keyword-source column', () => {
-  // The Tags column is PRODUCT data - ledsone's own stored tags - and it is a
-  // required column. What must never appear is a column for a keyword's
-  // DB/GEN/MIX provenance: that label belongs underneath its own keyword.
+test('there is no separate tag column of any kind', () => {
+  // Nine columns are the whole table. There is no Tags column, and there is no
+  // column for a keyword's provenance either: a resource belongs UNDERNEATH
+  // its own keyword, inside that keyword's cell.
   const headings = [...tagged().matchAll(/<th>(.*?)<\/th>/g)].map((match) => match[1]);
 
-  assert.deepEqual(headings, COLUMNS, 'still exactly the ten columns');
+  assert.deepEqual(headings, COLUMNS, 'still exactly the nine columns');
+  assert.ok(!headings.some((heading) => /^tags?$/i.test(heading)), 'no Tags column');
   assert.ok(!headings.some((heading) => /source|provenance|origin/i.test(heading)));
   assert.ok(!headings.some((heading) => /^(DB|GEN|MIX)$/i.test(heading)));
-  assert.equal(firstRowCells(tagged()).length, 10, 'and ten cells per row');
+  assert.equal(firstRowCells(tagged()).length, 9, 'and nine cells per row');
 
-  // The source labels live in the keyword cells, never in the Tags cell.
+  // Every resource pill is inside a keyword cell and nowhere else.
   const cells = firstRowCells(tagged());
-  assert.ok(!cells[5].includes('class="tag tag-'), 'no source pill in the Tags cell');
-  assert.ok(cells[7].includes('class="tag tag-'), 'the source pill is in the keyword cell');
+  for (const earlier of cells.slice(0, FIRST_KEYWORD_CELL)) {
+    assert.ok(!earlier.includes('class="tag tag-'), 'no resource pill before the keyword cells');
+  }
+  assert.ok(cells[6].includes('class="tag tag-'), 'the resource pill is in the keyword cell');
 });
 
 test('a keyword value from the database is escaped, tag and all', () => {
@@ -544,14 +492,24 @@ test('a keyword with unproven provenance gets NO tag, not a guessed one', () => 
   }
 });
 
-test("the pill's tooltip says where to go and check the word", () => {
-  const cell = firstRowCells(tagged())[7];
+test("the pill's tooltip names the table and column the word was proven from", () => {
+  // The tooltip is what makes a tag checkable: it points at the row.
+  const cell = firstRowCells(tagged())[6];
 
-  assert.ok(
-    cell.includes('title="From the Product Type entry in keyword-generator.js, selected by the Product Name"'),
-  );
-  assert.ok(cell.includes('title="From the Product Name (inventory.products.title)"'));
-  assert.ok(cell.includes('title="Recorded as a keyword value in the ledsone database"'));
+  assert.ok(cell.includes('listings.amazon_listing_search_engine_keywords.keyword'));
+  assert.ok(cell.includes('google_search_console.query_page.query'));
+  assert.ok(cell.includes('listings.shopify_listing_tag.tag'));
+});
+
+test('a method name is never used as a resource tag', () => {
+  // The whole point. These describe how the wording was produced; the tag
+  // answers where the word came from, and they are not the same question.
+  const cell = firstRowCells(tagged())[6];
+  const labels = [...cell.matchAll(/<span class="tag tag-[\w-]+"[^>]*>([^<]*)<\/span>/g)].map((m) => m[1]);
+
+  for (const method of ['GEN', 'Generated', 'Terminology', 'Product Name', 'Product Type', 'Product Name + Type']) {
+    assert.ok(!labels.includes(method), `"${method}" is a method, not a resource`);
+  }
 });
 
 test('a keyword category with nothing in it is a blank cell, with no tag', () => {
@@ -648,7 +606,7 @@ test('unavailable keyword categories render as four actual blank table cells', (
   const row = /<tbody>[\s\S]*?<tr>([\s\S]*?)<\/tr>/.exec(html)?.[1] ?? '';
   const cells = [...row.matchAll(/<td(?: [^>]*)?>(.*?)<\/td>/g)].map((match) => match[1]);
 
-  assert.equal(cells.length, 10);
+  assert.equal(cells.length, 9);
   assert.deepEqual(cells.slice(FIRST_KEYWORD_CELL), ['', '', '', '']);
   assert.ok(!html.includes('Not recorded'));
 });
@@ -807,7 +765,7 @@ test('page.html contains the complete table structure', () => {
   assert.match(TEMPLATE, /<\/table>/);
 });
 
-test('page.html contains all ten table headers, in order', () => {
+test('page.html contains all nine table headers, in order', () => {
   const headings = [...TEMPLATE.matchAll(/<th>(.*?)<\/th>/g)].map((match) => match[1]);
 
   assert.deepEqual(headings, COLUMNS);
@@ -1049,7 +1007,7 @@ test('a fully generated row fills all four keyword cells', () => {
   const row = /<tbody>[\s\S]*?<tr>([\s\S]*?)<\/tr>/.exec(html)?.[1] ?? '';
   const cells = [...row.matchAll(/<td(?: [^>]*)?>([\s\S]*?)<\/td>/g)].map((match) => match[1]);
 
-  assert.equal(cells.length, 10, 'ten columns, no extra keyword column');
+  assert.equal(cells.length, 9, 'nine columns, no extra keyword column');
   assert.ok(
     cells.every((cell) => cell !== ''),
     'every cell in a fully populated row has a value',
@@ -1075,7 +1033,7 @@ test('a product with an image renders an img in the first cell', () => {
   const html = withImage('https://sin1.contabostorage.com/img/product_images/1.jpg');
   const cells = firstRowCells(html);
 
-  assert.equal(cells.length, 10);
+  assert.equal(cells.length, 9);
   assert.match(cells[0], /^<img /, 'the image is the first cell');
   assert.ok(html.includes('src="https://sin1.contabostorage.com/img/product_images/1.jpg"'));
   assert.ok(html.includes('<td class="img"><img '));
@@ -1102,7 +1060,7 @@ test('a product with no image gets a blank cell, not a placeholder', () => {
     const cells = firstRowCells(withImage(missing));
     const html = withImage(missing);
 
-    assert.equal(cells.length, 10, `still ten cells for ${JSON.stringify(missing)}`);
+    assert.equal(cells.length, 9, `still nine cells for ${JSON.stringify(missing)}`);
     assert.equal(cells[0], '', 'the image cell is genuinely empty');
     assert.ok(!html.includes('<img'), 'no image element is invented');
     assert.ok(html.includes('<td class="img"></td>'));
@@ -1112,7 +1070,7 @@ test('a product with no image gets a blank cell, not a placeholder', () => {
 test('a product row with no image field at all still renders', () => {
   const cells = firstRowCells(page({ products: [{ id: 5, sku: 'X', title: 'A product' }] }));
 
-  assert.equal(cells.length, 10);
+  assert.equal(cells.length, 9);
   assert.equal(cells[0], '');
 });
 

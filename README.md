@@ -24,10 +24,10 @@ ledsone DB  ->  SQL query  ->  Node application  ->  HTML table
 Show the product catalogue alongside the keyword data recorded against each
 product, in the table structure requested:
 
-Product Image · SKU · Product ID · Product Name · Category · Tags ·
+Product Image · SKU · Product ID · Product Name · Category ·
 Primary Keyword · Secondary Keywords · Long-Tail Keywords · Competitor Keywords
 
-Six of those ten columns are backed by ledsone. The four keyword columns are
+Five of those nine columns are backed by ledsone. The four keyword columns are
 not: they are generated from the Product Name, and a cell stays genuinely blank
 rather than being filled with an invented value when the name supports nothing
 meaningful. See **Current data limitations** and **Keyword generation** below -
@@ -36,21 +36,20 @@ together they are the most important part of this file.
 There is deliberately no source/provenance column. A keyword's RESOURCE pill
 sits underneath the keyword itself, inside its own cell.
 
-### Two different kinds of tag
+### The keyword resource pill
 
-The page shows both, and they are unrelated:
+There is one kind of tag on this page, and it lives **inside a keyword cell**,
+directly below the keyword it belongs to. It is never a column of its own.
 
-| | **Product Tags** | **Keyword resource pills** |
-|---|---|---|
-| What | ledsone's own stored tags: `Handles`, `Threaded Rod` | The RESOURCE a keyword came from: `Product Type`, `Product Name`, `Product Name + Type`, `Database` |
-| Where | the Tags column | underneath each keyword, in the keyword cell |
-| Never | - | `GEN` or `Generated` - a method is not a resource |
-| Look | small blue pills, blue ink on a pale blue ground | solid teal / umber / purple / blue, white label - one colour per resource type |
-| Source | `listings.shopify_listing_tag` | the Product Type map, the Product Name, or a recorded ledsone value |
+| | **Keyword resource pill** |
+|---|---|
+| What | The REAL DATA RESOURCE that supplied the keyword: `Amazon`, `eBay`, `Google Search Console`, `Vintagelite`, `Electricalsone`, `B&Q` |
+| Where | underneath each keyword, in all four keyword columns |
+| Never | `GEN`, `Generated`, `Terminology`, `Product Name`, `Product Type` - a method is not a resource |
+| Look | solid amber / red / green / blue, white label - one colour per resource |
+| Source | a real record that resource holds against this product and that CONTAINS the keyword - see **Keyword resource tags** |
 
-Product Tags are business data and are never derived, guessed or invented.
-19,723 of 44,643 products carry at least one; the other 24,920 show a blank
-cell. See **Product Tags** below for how they are reached.
+A keyword nothing proves keeps its wording and wears no pill at all.
 
 ## Scope: ledsone only
 
@@ -117,7 +116,7 @@ npm run snapshot -- --limit 200 --embed-images
 npm run snapshot -- --out share/for-review.html
 ```
 
-All ten columns - product images, Product Tags, the category filter and paging
+All nine columns - product images, the category filter and paging
 (Previous / Next at top and bottom, plus arrow keys and a
 `#page=N&category=...` fragment) - work inside the file. Every product the file
 carries brings every tag ledsone holds for it; no product is sampled and no tag
@@ -161,7 +160,6 @@ script-free - `page.html` remains its server-side template.
 | Product ID | `inventory.products.id` |
 | Product Name | `inventory.products.title` (there is no `product_name` column) |
 | Category | `listings.shopify_listings.product_type` joined by SKU, falling back to the product type the Product Name states. 47.6% of products have one; the rest show a blank cell. Nothing is written back. |
-| Tags | `listings.shopify_listing_tag.tag`. **Stored, not derived.** 19,723 of 44,643 products (44.2%) carry at least one; the other 24,920 show a blank cell. See **Product Tags** below. |
 
 The image rule - designated main image first, first gallery image as fallback -
 is reused unchanged from **Smart Inventory Control** (`../Inventory System`),
@@ -184,66 +182,77 @@ matching `%primary%`, `%secondary%`, `%long_tail%`, `%longtail%`,
 both unrelated to keywords. The queries are in
 `query-packs/keyword-source-investigation.md`.
 
-## Product Tags
+## The Tags column was removed
 
-Tags are **stored business data**, not derived. They come from one table:
+The table had a tenth column carrying ledsone's own stored product tags from
+`listings.shopify_listing_tag`. It is gone: the table is the nine columns
+listed at the top, and nothing on the page draws a product tag.
 
-| | |
-|---|---|
-| Table | `listings.shopify_listing_tag` |
-| Tag text | `.tag` (stored with a leading space on many rows, so it is trimmed) |
-| Owner | `.product_id` |
-| Live rows | `.is_deleted = 0` |
+Two things survive it and are easy to confuse with it, so they are worth
+naming:
 
-### `product_id` is a LISTING id, not a product id
+- **The keyword resource pills stay.** They were never product tags. They sit
+  inside the keyword cells and name where each keyword came from - see below.
+- **`shopify_listing_tag` is still read**, but now only as *evidence*: a tag
+  the business filed against a product can prove that a keyword came from that
+  storefront. It reaches the page as a resource name, never as a tag of its own.
 
-This is the one thing worth reading carefully. Despite its name,
-`shopify_listing_tag.product_id` is **not** `inventory.products.id`:
+## Keyword resource tags
 
-| Column | Range |
-|---|---|
-| `inventory.products.id` | 1 – 44,652 |
-| `shopify_listing_tag.product_id` | 344,702 – 1,022,891 |
-| `listings.shopify_listings.id` | 344,704 – 1,022,893 |
+Every keyword in all four keyword columns carries a tag naming the **real data
+resource that supplied it** - and only when that can be proven from data.
 
-It is `shopify_listings.id`. Joining it straight to a product id matches
-nothing at all - silently, with no error.
+### What counts as proof
 
-### The tags hang off the PARENT listing
+A resource supplied a keyword when **that keyword's words actually appear, as a
+consecutive phrase, in a real record that resource holds against this product**.
+Nothing weaker counts. In particular, a product merely *being listed* on Amazon
+does not prove Amazon supplied the word "Door Handle": that is an assumption
+about a platform, not evidence about a word.
 
-Of the 14,765 tagged listings, **14,761 are parent listings**, and a parent
-listing has no SKU. So joining tags to products by SKU alone reaches **4
-products out of 44,643**. The children carry the SKUs, and
-`listings.shopify_listings_parent_child_mapping` links them. Following it takes
-coverage from 4 products to 19,723.
+Matching folds plurals ("Door Handles" proves "Door Handle") and ignores case
+and punctuation, but it requires the words to be **consecutive**. "Cupboard
+Handle" is proven by `cupboard handles vintage`; it is *not* proven by
+`Kitchen Cupboard Wardrobe Door Handles`, where both words appear but describe
+different things.
 
-### The relationship, end to end
+**A keyword nothing proves keeps its wording and wears no tag at all.** That is
+the honest outcome and it is deliberately preferred to naming a method. It is
+also common, and it is counted rather than hidden.
 
-```
-inventory.products.sku
-  -> shopify_listings  (coalesce(nullif(mapped_sku,''), sku) = products.sku)
-       -> that listing's own tags                        (4 products)
-       -> parent_child_mapping.child_id -> .parent_id
-            -> the parent listing's tags            (19,723 products)
-```
+### The resources, and how each is reached
 
-Tags from both are combined, trimmed, de-duplicated and sorted. Coverage:
+| Resource | Record | Joined by |
+|---|---|---|
+| Amazon | `listings.amazon_listing_search_engine_keywords.keyword` (the seller's own backend search terms) | SKU -> `amazon_listings.id` |
+| Amazon | `business_reports.amz_search_query_performance.search_query` (real shopper queries) | SKU -> `amazon_listings.asin` |
+| Amazon | `amazon_campaigns.search_term_performance_data.search_term` (advertising search terms) | `search_term_sku_data.sku` |
+| Amazon | `listings.amazon_listings.title` | SKU |
+| Google Search Console | `google_search_console.query_page.query` (real Google queries) | SKU -> Shopify `listing_url` -> `query_page.page` |
+| a named storefront | `listings.shopify_listing_tag.tag` and `shopify_listings.title` | SKU -> child listing -> parent |
+| eBay | `listings.ebay_listings.title` | SKU |
+| B&Q | `listings.bandq_listings.title` | SKU |
 
-| | Products |
-|---|---|
-| With at least one tag | 19,723 (44.2%) |
-| With none - blank cell | 24,920 (55.8%) |
-| Total | 44,643 |
+Two of those joins are traps, and both are documented in `resources.js`:
 
-Products carry a median of 14 tags and as many as 132. A cell draws the first
-eight as pills and names the remainder in a `+N` pill's tooltip - a limit on
-row height, not on the data: every tag is carried and every one is reachable.
+- `amazon_listing_search_engine_keywords.product_id` is **not** a product id.
+  It is `listings.amazon_listings.id`.
+- Google Search Console records a **page URL**, never a SKU. The parent
+  listing's URL has the Shopify product id appended and the child's carries a
+  `?variant=` suffix; only the stripped child URL matches what Google recorded.
 
-**Product ID 1** (`HLBP128BB`, a brass pull and push door handle) has exactly
-one tag: `Handles`.
+### Storefronts are named as businesses
 
-The lookup runs from the 50 rows being shown rather than from the tag table, so
-it is an indexed lookup per listing rather than a scan of 147,833 tag rows.
+ledsone runs ten Shopify storefronts, so a keyword proven from one says
+**`Electricalsone`** or **`Vintagelite`** - the real business a reader could
+visit - rather than "Shopify", which is only the software it runs on. They
+share one pill colour.
+
+### Variants share their parent's evidence
+
+Variants of one product are several SKUs behind one Shopify parent listing, so
+they share its tags, its page URL and therefore its Google queries. Every
+lookup from a shared key back to a SKU is one-to-many for that reason.
 
 ## Keyword generation
 
