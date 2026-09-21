@@ -1,0 +1,3335 @@
+﻿
+=== amazon_listing_search_engine_keywords cols ===
+id (integer)
+product_id (integer)
+keyword (text)
+view_order (smallint)
+
+=== amazon_listing_search_engine_keywords count ===
+190052
+
+=== amazon_listing_search_engine_keywords sample ===
+[
+  {
+    "id": 283516,
+    "product_id": 1006438,
+    "keyword": "bathroom storage bathroom bin toothbrush holder bathroom accessory soap dish home decor soap dispenser bathroom bathroom accessories black bathroom accessories soap holder bathroom organiser bathroom caddy bathroom decor bathroom accessories set soap dispenser bathroom black soap vanity organiser toothbrush holders for bathroom bathroom set black bathroom bin bathroom ornaments resin accessories black soap dispenser bathroom decorations gold bathroom accessories tooth brush holder",
+    "view_order": 1
+  },
+  {
+    "id": 287587,
+    "product_id": 1012985,
+    "keyword": "Wall Lights Wall Sconces Indoor Light Industrial Modern Vintage Retro Wall Lights Loft Bar Kitchen Sconce Lights Lamp Fixture with Ribbed Clear  Wall Lights E27 Socket, Sconce Lights for Bathroom Bedrooms Stairway Kitchen Loft  Wall Lights with Clear Glass Shade Wall Sconce Light Fixtures Indoor Wall Lamp for Porch Front Door Garden",
+    "view_order": 1
+  },
+  {
+    "id": 287586,
+    "product_id": 1012984,
+    "keyword": "Wall Lights Wall Sconces Indoor Light Industrial Modern Vintage Retro Wall Lights Loft Bar Kitchen Sconce Lights Lamp Fixture with Ribbed Clear  Wall Lights E27 Socket, Sconce Lights for Bathroom Bedrooms Stairway Kitchen Loft  Wall Lights with Clear Glass Shade Wall Sconce Light Fixtures Indoor Wall Lamp for Porch Front Door Garden modern wall sconce wall lights bedrooms wall sconces no wiring E27 Indoor Light Fixtures Indoor Home Lights Fixture wireless wall lights kitchen light",
+    "view_order": 1
+  },
+  {
+    "id": 77079,
+    "product_id": 451249,
+    "keyword": "Laundry basket laundry hamper collapsible laundry bin laundry bag with handles clothes organizer dirty clothes basket storage basket portable laundry bag laundry storage bin lightweight laundry hamper foldable laundry basket fabric laundry bin small laundry basket space-saving laundry hamper clothes storage bag easy-carry laundry bin sturdy laundry basket home laundry organizer waterproof laundry bag durable laundry hamper modern laundry bin Laundry basket storage bin collapsible laundry hamper",
+    "view_order": 1
+  },
+  {
+    "id": 205051,
+    "product_id": 811961,
+    "keyword": "Pendant Light Ceiling Lamp Hanging Light Modern Ceiling Pendant Satin Nickel Light UK",
+    "view_order": 1
+  },
+  {
+    "id": 287480,
+    "product_id": 1021520,
+    "keyword": "bedroom led light bulb ceiling lighting led lamp bathroom ceiling light lamp for bedroom bedroom lights ceiling living room lights ceiling standard lamps living room black ceiling light lamp shades kitchen lights trailer lights bedroom lamp pendant light fitting lamp shades for table lamps living room lamp ceiling lights for bedroom lampshade reducer ring light fitting pendant light black light shade bulbs for ceiling lights rattan lampshade spot lights ceiling black lampshade",
+    "view_order": 1
+  },
+  {
+    "id": 234493,
+    "product_id": 858315,
+    "keyword": "hemp rope pendant light hanging lighting industrial plug in pendant light vintage hanging light fixture pendant light vintage industrial lamp island ceiling light",
+    "view_order": 1
+  },
+  {
+    "id": 258847,
+    "product_id": 936293,
+    "keyword": "Pendant lamp curvy green lampshade pendant kight hanging lamp green light Shade lamp shade light shade industrial pendant lamp shade metal lampshade light fitting ceiling light",
+    "view_order": 1
+  },
+  {
+    "id": 287581,
+    "product_id": 604328,
+    "keyword": null,
+    "view_order": 9
+  },
+  {
+    "id": 286847,
+    "product_id": 1017721,
+    "keyword": " electrical wire gold vintage 3 core cable 3 core gold lighting cable 3 core twisted vintage electrical cable hemp 3 core cable vintage lighting cable 3 core twisted vintage electrical cable cable 3 core gold cable electrical flex braided cable pink gold electrical flex electrical cable vintage red braided cable flexible 3 core cable electrical flex cable brown colour electric wire braided 3 core cable light flex cable 3 core electrical cable lighting flex",
+    "view_order": 3
+  },
+  {
+    "id": 202676,
+    "product_id": 810645,
+    "keyword": " 3 Lamp Black Ceiling",
+    "view_order": 2
+  },
+  {
+    "id": 77080,
+    "product_id": 451250,
+    "keyword": "laundry basket laundry basket foldable laundry basket collapsible laundry hamper laundry bin laundry bin basket hamper wicker basket laundry bin laundry basket foldable laundry clothes basket laundry clothes storage laundry washing clothes linen storage bin basket dirty laundry bin dirty laundry basket dirty clothes basket kids dirty clothes storage basket laundry basket dirty washing clothes storage washing baskets for laundry foldable wash baskets laundry wash bin laundry toy storage basket",
+    "view_order": 1
+  },
+  {
+    "id": 202677,
+    "product_id": 810645,
+    "keyword": " 3 Light Bar Pendant",
+    "view_order": 3
+  },
+  {
+    "id": 218148,
+    "product_id": 837132,
+    "keyword": "lamp shade lampshade light shade yellow steel curvy ceiling light shade ceiling lampshade pendant light shade wall light shade floor lamp shade living room kitchen bedroom hallway dining room bathroom office bar cafe restaurant retro modern industrial vintage easy fit e27 e14 replacement shade metal shade lighting shade light cover hanging reducer rings reducer plates",
+    "view_order": 1
+  },
+  {
+    "id": 218149,
+    "product_id": 837133,
+    "keyword": "Red Tape Red Reflective Tape High Visibility Tape Safety Reflective Tape Reflective Adhesive Tape Car Reflective Tape Bicycle Reflective Tape Weatherproof Reflective Tape Self-Adhesive Reflective Tape Night Visibility TapeReflective Marking Tape Reflective Warning TapeReflective Strips Traffic Safety Tape Reflective Safety Tape Emergency Reflective Tape High-visibility reflective material Weatherproof and durable Self-adhesive for easy application Versatile for multiple surfaces Vehicle tape",
+    "view_order": 1
+  }
+]
+
+=== shopify_listing_meta cols ===
+id (integer)
+product_id (bigint)
+title_tag (character varying)
+description_tag (text)
+
+=== shopify_listing_meta count ===
+14919
+
+=== shopify_listing_meta sample ===
+[
+  {
+    "id": 1,
+    "product_id": "4417279983712",
+    "title_tag": "2 Core Round Peach Braided Fabric Cable – 0.75mm Flex",
+    "description_tag": "Visit our website to purchase high-quality 2-core flex cables. Look through our selection for trustworthy solutions to your electrical needs."
+  },
+  {
+    "id": 7,
+    "product_id": "4417257963616",
+    "title_tag": "Constant Current LED Driver 1-3W 300mA DC 3V-12V Power Supply",
+    "description_tag": "Get efficient and reliable constant current Power Supply DC 3V-12V 300mA LED drivers for 1-3W LEDs in the UK. Power your lighting projects effortlessly. Order now"
+  },
+  {
+    "id": 8,
+    "product_id": "7991786864890",
+    "title_tag": "Vintage Industrial Ceiling Pendant Light - Industrial Elegance for Your Space",
+    "description_tag": "Enhance your interior with the Vintage Industrial Ceiling Pendant Light, featuring a metal round ceiling rose, adjustable cable, and E27 bulb holder. Create a touch of industrial elegance with customizable height and positioning. Perfect for indoor living, kitchen, pub, cafe, hotel, and restaurant spaces."
+  },
+  {
+    "id": 9,
+    "product_id": "8015418720506",
+    "title_tag": "Modern Spider Pendant Lamp Kit - Dimmable  | Ledsone.co.uk",
+    "description_tag": "Find peace with LEDSone's modern/retro spider pendant lamp. Space-saving, chic, and   eye-caring for your home or office. Don't miss out, shop today! "
+  },
+  {
+    "id": 13,
+    "product_id": "7982925283578",
+    "title_tag": null,
+    "description_tag": null
+  }
+]
+
+=== amz sek rows mentioning door handle ===
+[
+  {
+    "id": 283572,
+    "product_id": 1006608,
+    "keyword": "satin chrome door handles vintage cupboard black brass drawer kitchen pan handle nickel knobs bifold animal birdcage cabinet crystal victorian trunk bronze dresser antique bird cage furniture inside gear stick flush ring pull cup white finger double glazed ceramic copper hardware gold wardrobe the wooden for cupboards bedroom silver suitcase replacement self adhesive hemnes scroll knob brushed with backplate knurled unique bow foot lever matte",
+    "view_order": 1
+  },
+  {
+    "id": 196553,
+    "product_id": 809670,
+    "keyword": " Barn Door Handles",
+    "view_order": 5
+  },
+  {
+    "id": 287491,
+    "product_id": 1021636,
+    "keyword": "heavy duty plug Yellow wall plugs heavy duty bolts black screws and wall plugs concrete mix 6mm rawl plugs raw plugs and screws set fischer duopower wall plugs fischer wall plugs 8mm wall plugs tv mounting screws hammer fixings plasplugs 6mm wall plugs pc screws fisher wall plugs bolt set tv wall bracket screws screws and rawl plugs set brown rawl plugs door handle bolt through fixings dry wall plugs and screws 10mm wall plugs self drill plasterboard fixing fischer duopower wall plugs",
+    "view_order": 1
+  },
+  {
+    "id": 286320,
+    "product_id": 1014529,
+    "keyword": "heavy duty plug Yellow wall plugs heavy duty bolts black screws and wall plugs concrete mix 6mm rawl plugs raw plugs and screws set fischer duopower wall plugs fischer wall plugs 8mm wall plugs tv mounting screws hammer fixings plasplugs 6mm wall plugs pc screws fisher wall plugs bolt set tv wall bracket screws screws and rawl plugs set brown rawl plugs door handle bolt through fixings dry wall plugs and screws 10mm wall plugs self drill plasterboard fixing fischer duopower wall plugs",
+    "view_order": 1
+  },
+  {
+    "id": 287493,
+    "product_id": 1021638,
+    "keyword": "heavy duty plug Yellow wall plugs heavy duty bolts black screws and wall plugs concrete mix 6mm rawl plugs raw plugs and screws set fischer duopower wall plugs fischer wall plugs 8mm wall plugs tv mounting screws hammer fixings plasplugs 6mm wall plugs pc screws fisher wall plugs bolt set tv wall bracket screws screws and rawl plugs set brown rawl plugs door handle bolt through fixings dry wall plugs and screws 10mm wall plugs self drill plasterboard fixing fischer duopower wall plugs",
+    "view_order": 1
+  },
+  {
+    "id": 287492,
+    "product_id": 1021637,
+    "keyword": "heavy duty plug Yellow wall plugs heavy duty bolts black screws and wall plugs concrete mix 6mm rawl plugs raw plugs and screws set fischer duopower wall plugs fischer wall plugs 8mm wall plugs tv mounting screws hammer fixings plasplugs 6mm wall plugs pc screws fisher wall plugs bolt set tv wall bracket screws screws and rawl plugs set brown rawl plugs door handle bolt through fixings dry wall plugs and screws 10mm wall plugs self drill plasterboard fixing fischer duopower wall plugs",
+    "view_order": 1
+  },
+  {
+    "id": 240335,
+    "product_id": 861633,
+    "keyword": "heavy duty plugYellow wall plugs heavy duty boltsblac k screws and wall plugs  concrete mix 6mm rawl plugs  raw plugs and screws set  fischer duopower wall plugs  fischer wall plugs\t 8mm wall plugs  tv mounting screws  hammer fixings plasplugs  6mm wall plugs pc screws fisher wall plugs bolt set tv wall bracket screws screws and rawl plugs set brown rawl plugs door handle bolt through fixings  dry wall plugs and screws  10mm wall plugsself drill plasterboard fixing fischer duopower",
+    "view_order": 1
+  },
+  {
+    "id": 286318,
+    "product_id": 1014527,
+    "keyword": "heavy duty plug Yellow wall plugs heavy duty bolts black screws and wall plugs concrete mix 6mm rawl plugs raw plugs and screws set fischer duopower wall plugs fischer wall plugs 8mm wall plugs tv mounting screws hammer fixings plasplugs 6mm wall plugs pc screws fisher wall plugs bolt set tv wall bracket screws screws and rawl plugs set brown rawl plugs door handle bolt through fixings dry wall plugs and screws 10mm wall plugs self drill plasterboard fixing fischer duopower wall plugs",
+    "view_order": 1
+  },
+  {
+    "id": 286319,
+    "product_id": 1014528,
+    "keyword": "heavy duty plug Yellow wall plugs heavy duty bolts black screws and wall plugs concrete mix 6mm rawl plugs raw plugs and screws set fischer duopower wall plugs fischer wall plugs 8mm wall plugs tv mounting screws hammer fixings plasplugs 6mm wall plugs pc screws fisher wall plugs bolt set tv wall bracket screws screws and rawl plugs set brown rawl plugs door handle bolt through fixings dry wall plugs and screws 10mm wall plugs self drill plasterboard fixing fischer duopower wall plugs",
+    "view_order": 1
+  },
+  {
+    "id": 202993,
+    "product_id": 810724,
+    "keyword": "Door Handle , Cabinet Handle , Drawer Knobs , Cabinet Knobs , Cupboard Pull Handle , Push Handle , Metal Knob , Kitchen Handle , Bow Pulls , Push Kitchen Bathroom Bedroom Furniture Pull Handles , Cabinet Door Pull Handle",
+    "view_order": 1
+  }
+]
+
+=== market_place_id_mapping sample ===
+[
+  {
+    "id": 14,
+    "site": "Netherlands",
+    "site_id": 146,
+    "code": null,
+    "currency": "EUR",
+    "postal": null,
+    "amz_market_place": "A1805IZSGTT6HS",
+    "market_place_code": "EBAY-NL",
+    "location": null,
+    "is_ebay": null,
+    "is_amz": 1,
+    "lang_tag": "nl_NL"
+  },
+  {
+    "id": 15,
+    "site": "Poland",
+    "site_id": 212,
+    "code": null,
+    "currency": "PLN",
+    "postal": null,
+    "amz_market_place": "A1C3SOZRARQ6R3",
+    "market_place_code": "EBAY-PL",
+    "location": null,
+    "is_ebay": null,
+    "is_amz": 1,
+    "lang_tag": "pl_PL"
+  },
+  {
+    "id": 16,
+    "site": "Singapore",
+    "site_id": 216,
+    "code": null,
+    "currency": "SGD",
+    "postal": null,
+    "amz_market_place": "A19VAU5U5O7RUS",
+    "market_place_code": "EBAY-SG",
+    "location": null,
+    "is_ebay": null,
+    "is_amz": 1,
+    "lang_tag": "en_SG"
+  },
+  {
+    "id": 18,
+    "site": "Sweden",
+    "site_id": 1000,
+    "code": null,
+    "currency": "SEK",
+    "postal": null,
+    "amz_market_place": "A2NODRKZP88ZB9",
+    "market_place_code": null,
+    "location": null,
+    "is_ebay": null,
+    "is_amz": 1,
+    "lang_tag": "sv_SE"
+  },
+  {
+    "id": 19,
+    "site": "Turkey",
+    "site_id": 1001,
+    "code": null,
+    "currency": "TRY",
+    "postal": null,
+    "amz_market_place": "A33AVAJ2PDY3EV",
+    "market_place_code": null,
+    "location": null,
+    "is_ebay": null,
+    "is_amz": 1,
+    "lang_tag": "tr_TR"
+  },
+  {
+    "id": 20,
+    "site": "Mexico",
+    "site_id": 1002,
+    "code": null,
+    "currency": "MXN",
+    "postal": null,
+    "amz_market_place": "A1AM78C64UM0Y8",
+    "market_place_code": null,
+    "location": null,
+    "is_ebay": null,
+    "is_amz": 1,
+    "lang_tag": "es_MX"
+  },
+  {
+    "id": 21,
+    "site": "Brazil",
+    "site_id": 1003,
+    "code": null,
+    "currency": "BRL",
+    "postal": null,
+    "amz_market_place": "A2Q3Y263D00KWC",
+    "market_place_code": null,
+    "location": null,
+    "is_ebay": null,
+    "is_amz": 1,
+    "lang_tag": "pt_BR"
+  },
+  {
+    "id": 22,
+    "site": "Egypt",
+    "site_id": 1004,
+    "code": null,
+    "currency": "EGP",
+    "postal": null,
+    "amz_market_place": "ARBP9OOSHTCHU",
+    "market_place_code": null,
+    "location": null,
+    "is_ebay": null,
+    "is_amz": 1,
+    "lang_tag": "ar_EG"
+  },
+  {
+    "id": 23,
+    "site": "United Arab Emirates",
+    "site_id": 1005,
+    "code": null,
+    "currency": "AED",
+    "postal": null,
+    "amz_market_place": "A2VIGQ35RCS4UG",
+    "market_place_code": null,
+    "location": null,
+    "is_ebay": null,
+    "is_amz": 1,
+    "lang_tag": "ar_AE"
+  },
+  {
+    "id": 24,
+    "site": "South Africa",
+    "site_id": 1006,
+    "code": null,
+    "currency": "ZAR",
+    "postal": null,
+    "amz_market_place": "AE08WJ6YKNBMC",
+    "market_place_code": null,
+    "location": null,
+    "is_ebay": null,
+    "is_amz": 1,
+    "lang_tag": "en_ZA"
+  },
+  {
+    "id": 25,
+    "site": "Saudi Arabia",
+    "site_id": 1007,
+    "code": null,
+    "currency": "SAR",
+    "postal": null,
+    "amz_market_place": "A17E79C6D8DWNP",
+    "market_place_code": null,
+    "location": null,
+    "is_ebay": null,
+    "is_amz": 1,
+    "lang_tag": "ar_SA"
+  },
+  {
+    "id": 1,
+    "site": "US",
+    "site_id": 0,
+    "code": "US",
+    "currency": "USD",
+    "postal": "95122",
+    "amz_market_place": "ATVPDKIKX0DER",
+    "market_place_code": "EBAY-US",
+    "location": "San Jose, California",
+    "is_ebay": 2,
+    "is_amz": 1,
+    "lang_tag": "en_US"
+  },
+  {
+    "id": 2,
+    "site": "UK",
+    "site_id": 3,
+    "code": "GB",
+    "currency": "GBP",
+    "postal": "CV2 2NW",
+    "amz_market_place": "A1F83G8C2ARO7P",
+    "market_place_code": "EBAY-GB",
+    "location": "Coventry",
+    "is_ebay": 2,
+    "is_amz": 1,
+    "lang_tag": "en_GB"
+  },
+  {
+    "id": 3,
+    "site": "France",
+    "site_id": 71,
+    "code": "FR",
+    "currency": "EUR",
+    "postal": "95100",
+    "amz_market_place": "A13V1IB3VIYZZH",
+    "market_place_code": "EBAY-FR",
+    "location": "Argenteuil",
+    "is_ebay": 2,
+    "is_amz": 1,
+    "lang_tag": "fr_FR"
+  },
+  {
+    "id": 4,
+    "site": "Germany",
+    "site_id": 77,
+    "code": "DE",
+    "currency": "EUR",
+    "postal": "78647",
+    "amz_market_place": "A1PA6795UKMFR9",
+    "market_place_code": "EBAY-FR",
+    "location": "Trossingen",
+    "is_ebay": 2,
+    "is_amz": 1,
+    "lang_tag": "de_DE"
+  },
+  {
+    "id": 5,
+    "site": "Canada",
+    "site_id": 2,
+    "code": "CA",
+    "currency": "CAD",
+    "postal": "V5X 1E3",
+    "amz_market_place": "A2EUQ1WTGCTBG2",
+    "market_place_code": "EBAY-ENCA",
+    "location": "Vancouver",
+    "is_ebay": 2,
+    "is_amz": 1,
+    "lang_tag": "en_CA"
+  },
+  {
+    "id": 6,
+    "site": "Italy",
+    "site_id": 101,
+    "code": "IT",
+    "currency": "EUR",
+    "postal": "78647 ",
+    "amz_market_place": "APJ6JRA9NG5V4",
+    "market_place_code": "EBAY-IT",
+    "location": "Trossingen",
+    "is_ebay": 2,
+    "is_amz": 1,
+    "lang_tag": "it_IT"
+  },
+  {
+    "id": 7,
+    "site": "Spain",
+    "site_id": 186,
+    "code": null,
+    "currency": "EUR",
+    "postal": null,
+    "amz_market_place": "A1RKKUPIHCS9HS",
+    "market_place_code": "EBAY-ES",
+    "location": null,
+    "is_ebay": 2,
+    "is_amz": 1,
+    "lang_tag": "es_ES"
+  },
+  {
+    "id": 8,
+    "site": "Austria",
+    "site_id": 16,
+    "code": "AT",
+    "currency": "EUR",
+    "postal": null,
+    "amz_market_place": null,
+    "market_place_code": "EBAY-AT",
+    "location": null,
+    "is_ebay": 2,
+    "is_amz": null,
+    "lang_tag": "de_AT"
+  },
+  {
+    "id": 9,
+    "site": "Ireland",
+    "site_id": 205,
+    "code": "IE",
+    "currency": "EUR",
+    "postal": null,
+    "amz_market_place": "A28R8C7NBKEWEA",
+    "market_place_code": "EBAY-IE",
+    "location": null,
+    "is_ebay": 2,
+    "is_amz": 1,
+    "lang_tag": "en_IE"
+  },
+  {
+    "id": 11,
+    "site": "Australia",
+    "site_id": 15,
+    "code": null,
+    "currency": "AUD",
+    "postal": null,
+    "amz_market_place": "A39IBJ37TRP1C6",
+    "market_place_code": "EBAY-AU",
+    "location": null,
+    "is_ebay": 2,
+    "is_amz": 1,
+    "lang_tag": "en_AU"
+  },
+  {
+    "id": 12,
+    "site": "Belgium",
+    "site_id": 23,
+    "code": null,
+    "currency": "EUR",
+    "postal": null,
+    "amz_market_place": "AMEN7PMS3EDWL",
+    "market_place_code": "EBAY-FRBE",
+    "location": null,
+    "is_ebay": null,
+    "is_amz": 1,
+    "lang_tag": "fr_BE"
+  }
+]
+
+=== amazon_marketplaces ===
+[
+  {
+    "id": 1,
+    "amz_token_id": 1,
+    "amz_mar_id": "A13V1IB3VIYZZH",
+    "mp_text": "France",
+    "country_code": "FR",
+    "lang_code": "fr_FR",
+    "url": "www.amazon.fr",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 2,
+    "amz_token_id": 1,
+    "amz_mar_id": "A17E79C6D8DWNP",
+    "mp_text": "Saudi Arabia",
+    "country_code": "SA",
+    "lang_code": "en_AE",
+    "url": "www.amazon.sa",
+    "currency": "SAR",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 3,
+    "amz_token_id": 1,
+    "amz_mar_id": "A1805IZSGTT6HS",
+    "mp_text": "Netherlands",
+    "country_code": "NL",
+    "lang_code": "nl_NL",
+    "url": "www.amazon.nl",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 4,
+    "amz_token_id": 1,
+    "amz_mar_id": "A1C3SOZRARQ6R3",
+    "mp_text": "Poland",
+    "country_code": "PL",
+    "lang_code": "pl_PL",
+    "url": "www.amazon.pl",
+    "currency": "PLN",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 5,
+    "amz_token_id": 1,
+    "amz_mar_id": "A1F83G8C2ARO7P",
+    "mp_text": "UK",
+    "country_code": "GB",
+    "lang_code": "en_GB",
+    "url": "www.amazon.co.uk",
+    "currency": "GBP",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 6,
+    "amz_token_id": 1,
+    "amz_mar_id": "A1PA6795UKMFR9",
+    "mp_text": "Germany",
+    "country_code": "DE",
+    "lang_code": "de_DE",
+    "url": "www.amazon.de",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 7,
+    "amz_token_id": 1,
+    "amz_mar_id": "A1RKKUPIHCS9HS",
+    "mp_text": "Spain",
+    "country_code": "ES",
+    "lang_code": "es_ES",
+    "url": "www.amazon.es",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 8,
+    "amz_token_id": 1,
+    "amz_mar_id": "A28R8C7NBKEWEA",
+    "mp_text": "Ireland",
+    "country_code": "IE",
+    "lang_code": "en_IE",
+    "url": "www.amazon.ie",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 9,
+    "amz_token_id": 1,
+    "amz_mar_id": "A2NODRKZP88ZB9",
+    "mp_text": "Sweden",
+    "country_code": "SE",
+    "lang_code": "sv_SE",
+    "url": "www.amazon.se",
+    "currency": "SEK",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 10,
+    "amz_token_id": 1,
+    "amz_mar_id": "A2VIGQ35RCS4UG",
+    "mp_text": "United Arab Emirates",
+    "country_code": "AE",
+    "lang_code": "en_AE",
+    "url": "www.amazon.ae",
+    "currency": "AED",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 11,
+    "amz_token_id": 1,
+    "amz_mar_id": "A33AVAJ2PDY3EV",
+    "mp_text": "Turkey",
+    "country_code": "TR",
+    "lang_code": "tr_TR",
+    "url": "www.amazon.com.tr",
+    "currency": "TRY",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 12,
+    "amz_token_id": 1,
+    "amz_mar_id": "AMEN7PMS3EDWL",
+    "mp_text": "Belgium",
+    "country_code": "BE",
+    "lang_code": "fr_BE",
+    "url": "www.amazon.com.be",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 13,
+    "amz_token_id": 1,
+    "amz_mar_id": "APJ6JRA9NG5V4",
+    "mp_text": "Italy",
+    "country_code": "IT",
+    "lang_code": "it_IT",
+    "url": "www.amazon.it",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:30.000Z"
+  },
+  {
+    "id": 14,
+    "amz_token_id": 2,
+    "amz_mar_id": "A1805IZSGTT6HS",
+    "mp_text": "Netherlands",
+    "country_code": "NL",
+    "lang_code": "nl_NL",
+    "url": "www.amazon.nl",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:31.000Z"
+  },
+  {
+    "id": 15,
+    "amz_token_id": 2,
+    "amz_mar_id": "A1F83G8C2ARO7P",
+    "mp_text": "UK",
+    "country_code": "GB",
+    "lang_code": "en_GB",
+    "url": "www.amazon.co.uk",
+    "currency": "GBP",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:31.000Z"
+  },
+  {
+    "id": 16,
+    "amz_token_id": 2,
+    "amz_mar_id": "A1PA6795UKMFR9",
+    "mp_text": "Germany",
+    "country_code": "DE",
+    "lang_code": "de_DE",
+    "url": "www.amazon.de",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:31.000Z"
+  },
+  {
+    "id": 17,
+    "amz_token_id": 2,
+    "amz_mar_id": "A1RKKUPIHCS9HS",
+    "mp_text": "Spain",
+    "country_code": "ES",
+    "lang_code": "es_ES",
+    "url": "www.amazon.es",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:31.000Z"
+  },
+  {
+    "id": 18,
+    "amz_token_id": 2,
+    "amz_mar_id": "A28R8C7NBKEWEA",
+    "mp_text": "Ireland",
+    "country_code": "IE",
+    "lang_code": "en_IE",
+    "url": "www.amazon.ie",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:31.000Z"
+  },
+  {
+    "id": 19,
+    "amz_token_id": 2,
+    "amz_mar_id": "A2NODRKZP88ZB9",
+    "mp_text": "Sweden",
+    "country_code": "SE",
+    "lang_code": "sv_SE",
+    "url": "www.amazon.se",
+    "currency": "SEK",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:31.000Z"
+  },
+  {
+    "id": 20,
+    "amz_token_id": 2,
+    "amz_mar_id": "A33AVAJ2PDY3EV",
+    "mp_text": "Turkey",
+    "country_code": "TR",
+    "lang_code": "tr_TR",
+    "url": "www.amazon.com.tr",
+    "currency": "TRY",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:31.000Z"
+  },
+  {
+    "id": 21,
+    "amz_token_id": 2,
+    "amz_mar_id": "AMEN7PMS3EDWL",
+    "mp_text": "Belgium",
+    "country_code": "BE",
+    "lang_code": "fr_BE",
+    "url": "www.amazon.com.be",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:31.000Z"
+  },
+  {
+    "id": 22,
+    "amz_token_id": 2,
+    "amz_mar_id": "APJ6JRA9NG5V4",
+    "mp_text": "Italy",
+    "country_code": "IT",
+    "lang_code": "it_IT",
+    "url": "www.amazon.it",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:31.000Z"
+  },
+  {
+    "id": 23,
+    "amz_token_id": 4,
+    "amz_mar_id": "A17E79C6D8DWNP",
+    "mp_text": "Saudi Arabia",
+    "country_code": "SA",
+    "lang_code": "en_AE",
+    "url": "www.amazon.sa",
+    "currency": "SAR",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:31.000Z"
+  },
+  {
+    "id": 24,
+    "amz_token_id": 4,
+    "amz_mar_id": "A1805IZSGTT6HS",
+    "mp_text": "Netherlands",
+    "country_code": "NL",
+    "lang_code": "nl_NL",
+    "url": "www.amazon.nl",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:32.000Z"
+  },
+  {
+    "id": 25,
+    "amz_token_id": 4,
+    "amz_mar_id": "A1C3SOZRARQ6R3",
+    "mp_text": "Poland",
+    "country_code": "PL",
+    "lang_code": "pl_PL",
+    "url": "www.amazon.pl",
+    "currency": "PLN",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:32.000Z"
+  },
+  {
+    "id": 26,
+    "amz_token_id": 4,
+    "amz_mar_id": "A1F83G8C2ARO7P",
+    "mp_text": "UK",
+    "country_code": "GB",
+    "lang_code": "en_GB",
+    "url": "www.amazon.co.uk",
+    "currency": "GBP",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:32.000Z"
+  },
+  {
+    "id": 27,
+    "amz_token_id": 4,
+    "amz_mar_id": "A1RKKUPIHCS9HS",
+    "mp_text": "Spain",
+    "country_code": "ES",
+    "lang_code": "es_ES",
+    "url": "www.amazon.es",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:32.000Z"
+  },
+  {
+    "id": 28,
+    "amz_token_id": 4,
+    "amz_mar_id": "A28R8C7NBKEWEA",
+    "mp_text": "Ireland",
+    "country_code": "IE",
+    "lang_code": "en_IE",
+    "url": "www.amazon.ie",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:32.000Z"
+  },
+  {
+    "id": 29,
+    "amz_token_id": 4,
+    "amz_mar_id": "A2NODRKZP88ZB9",
+    "mp_text": "Sweden",
+    "country_code": "SE",
+    "lang_code": "sv_SE",
+    "url": "www.amazon.se",
+    "currency": "SEK",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:32.000Z"
+  },
+  {
+    "id": 30,
+    "amz_token_id": 4,
+    "amz_mar_id": "A2VIGQ35RCS4UG",
+    "mp_text": "United Arab Emirates",
+    "country_code": "AE",
+    "lang_code": "en_AE",
+    "url": "www.amazon.ae",
+    "currency": "AED",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:32.000Z"
+  },
+  {
+    "id": 31,
+    "amz_token_id": 4,
+    "amz_mar_id": "AMEN7PMS3EDWL",
+    "mp_text": "Belgium",
+    "country_code": "BE",
+    "lang_code": "fr_BE",
+    "url": "www.amazon.com.be",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:32.000Z"
+  },
+  {
+    "id": 32,
+    "amz_token_id": 4,
+    "amz_mar_id": "APJ6JRA9NG5V4",
+    "mp_text": "Italy",
+    "country_code": "IT",
+    "lang_code": "it_IT",
+    "url": "www.amazon.it",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:32.000Z"
+  },
+  {
+    "id": 33,
+    "amz_token_id": 5,
+    "amz_mar_id": "A1AM78C64UM0Y8",
+    "mp_text": "Mexico",
+    "country_code": "MX",
+    "lang_code": "es_MX",
+    "url": "www.amazon.com.mx",
+    "currency": "MXN",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:32.000Z"
+  },
+  {
+    "id": 34,
+    "amz_token_id": 5,
+    "amz_mar_id": "ATVPDKIKX0DER",
+    "mp_text": "US",
+    "country_code": "US",
+    "lang_code": "en_US",
+    "url": "www.amazon.com",
+    "currency": "USD",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:32.000Z"
+  },
+  {
+    "id": 35,
+    "amz_token_id": 6,
+    "amz_mar_id": "A1AM78C64UM0Y8",
+    "mp_text": "Mexico",
+    "country_code": "MX",
+    "lang_code": "es_MX",
+    "url": "www.amazon.com.mx",
+    "currency": "MXN",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:33.000Z"
+  },
+  {
+    "id": 36,
+    "amz_token_id": 6,
+    "amz_mar_id": "A2EUQ1WTGCTBG2",
+    "mp_text": "Canada",
+    "country_code": "CA",
+    "lang_code": "en_CA",
+    "url": "www.amazon.ca",
+    "currency": "CAD",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:33.000Z"
+  },
+  {
+    "id": 38,
+    "amz_token_id": 6,
+    "amz_mar_id": "ATVPDKIKX0DER",
+    "mp_text": "US",
+    "country_code": "US",
+    "lang_code": "en_US",
+    "url": "www.amazon.com",
+    "currency": "USD",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:33.000Z"
+  },
+  {
+    "id": 39,
+    "amz_token_id": 7,
+    "amz_mar_id": "A1AM78C64UM0Y8",
+    "mp_text": "Mexico",
+    "country_code": "MX",
+    "lang_code": "es_MX",
+    "url": "www.amazon.com.mx",
+    "currency": "MXN",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:34.000Z"
+  },
+  {
+    "id": 40,
+    "amz_token_id": 7,
+    "amz_mar_id": "A2EUQ1WTGCTBG2",
+    "mp_text": "Canada",
+    "country_code": "CA",
+    "lang_code": "en_CA",
+    "url": "www.amazon.ca",
+    "currency": "CAD",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:34.000Z"
+  },
+  {
+    "id": 42,
+    "amz_token_id": 7,
+    "amz_mar_id": "ATVPDKIKX0DER",
+    "mp_text": "US",
+    "country_code": "US",
+    "lang_code": "en_US",
+    "url": "www.amazon.com",
+    "currency": "USD",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:34.000Z"
+  },
+  {
+    "id": 43,
+    "amz_token_id": 8,
+    "amz_mar_id": "A13V1IB3VIYZZH",
+    "mp_text": "France",
+    "country_code": "FR",
+    "lang_code": "fr_FR",
+    "url": "www.amazon.fr",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:35.000Z"
+  },
+  {
+    "id": 44,
+    "amz_token_id": 8,
+    "amz_mar_id": "A1805IZSGTT6HS",
+    "mp_text": "Netherlands",
+    "country_code": "NL",
+    "lang_code": "nl_NL",
+    "url": "www.amazon.nl",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:35.000Z"
+  },
+  {
+    "id": 45,
+    "amz_token_id": 8,
+    "amz_mar_id": "A1C3SOZRARQ6R3",
+    "mp_text": "Poland",
+    "country_code": "PL",
+    "lang_code": "pl_PL",
+    "url": "www.amazon.pl",
+    "currency": "PLN",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:35.000Z"
+  },
+  {
+    "id": 46,
+    "amz_token_id": 8,
+    "amz_mar_id": "A1PA6795UKMFR9",
+    "mp_text": "Germany",
+    "country_code": "DE",
+    "lang_code": "de_DE",
+    "url": "www.amazon.de",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:35.000Z"
+  },
+  {
+    "id": 47,
+    "amz_token_id": 8,
+    "amz_mar_id": "A1RKKUPIHCS9HS",
+    "mp_text": "Spain",
+    "country_code": "ES",
+    "lang_code": "es_ES",
+    "url": "www.amazon.es",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:35.000Z"
+  },
+  {
+    "id": 48,
+    "amz_token_id": 8,
+    "amz_mar_id": "A28R8C7NBKEWEA",
+    "mp_text": "Ireland",
+    "country_code": "IE",
+    "lang_code": "en_IE",
+    "url": "www.amazon.ie",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:35.000Z"
+  },
+  {
+    "id": 49,
+    "amz_token_id": 8,
+    "amz_mar_id": "A2NODRKZP88ZB9",
+    "mp_text": "Sweden",
+    "country_code": "SE",
+    "lang_code": "sv_SE",
+    "url": "www.amazon.se",
+    "currency": "SEK",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:35.000Z"
+  },
+  {
+    "id": 50,
+    "amz_token_id": 8,
+    "amz_mar_id": "AMEN7PMS3EDWL",
+    "mp_text": "Belgium",
+    "country_code": "BE",
+    "lang_code": "fr_BE",
+    "url": "www.amazon.com.be",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:35.000Z"
+  },
+  {
+    "id": 51,
+    "amz_token_id": 8,
+    "amz_mar_id": "APJ6JRA9NG5V4",
+    "mp_text": "Italy",
+    "country_code": "IT",
+    "lang_code": "it_IT",
+    "url": "www.amazon.it",
+    "currency": "EUR",
+    "is_participating": 1,
+    "has_suspended_listings": 0,
+    "updated_at": "2025-11-25T03:26:35.000Z"
+  },
+  {
+    "id": 52,
+    "amz_token_id": 9,
+    "amz_mar_id": "A1AM78C64UM0Y8",
+    "mp_text": "Mexico",
+    "country_code": "MX",
+    "lang_code": "es_MX",
+    "url": "www.amazon.com.mx",
+    "currency": "MXN",
+    "is_participating": 1,
+    "has_suspended_listings": 1,
+    "updated_at": "2025-11-25T03:26:36.000Z"
+  }
+]
+
+=== order_management.source ===
+[
+  {
+    "id": 1,
+    "source_name": "AMAZON"
+  },
+  {
+    "id": 2,
+    "source_name": "EBAY"
+  },
+  {
+    "id": 3,
+    "source_name": "SHOPIFY"
+  },
+  {
+    "id": 4,
+    "source_name": "ETSY"
+  },
+  {
+    "id": 5,
+    "source_name": "ONBUY"
+  },
+  {
+    "id": 6,
+    "source_name": "WAYFAIR"
+  },
+  {
+    "id": 7,
+    "source_name": "AVASAM"
+  },
+  {
+    "id": 8,
+    "source_name": "MANOMANO"
+  },
+  {
+    "id": 9,
+    "source_name": "MANUALORDER"
+  },
+  {
+    "id": 10,
+    "source_name": "RESEND"
+  },
+  {
+    "id": 11,
+    "source_name": "REPLACEMENT"
+  },
+  {
+    "id": 12,
+    "source_name": "BOL"
+  },
+  {
+    "id": 13,
+    "source_name": "MANUAL OM"
+  },
+  {
+    "id": 14,
+    "source_name": "FAIRE"
+  },
+  {
+    "id": 15,
+    "source_name": "WOO"
+  },
+  {
+    "id": 16,
+    "source_name": "B&Q"
+  },
+  {
+    "id": 17,
+    "source_name": "TEMU"
+  }
+]
+
+=== order_management.sub_source ===
+[
+  {
+    "id": 1,
+    "source_id": 2,
+    "name": "led_sone",
+    "map_name": "ledsone",
+    "orders_fetch": "2026-09-18T06:51:07.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/ledsone.png",
+    "company": "LEDSone",
+    "address": "LEDSone<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": "GB 287587828",
+    "max_qty": 39,
+    "max_qty_market": {
+      "0": 30
+    },
+    "list_update": 1,
+    "created_at": null,
+    "updated_at": "2026-09-18T06:51:08.000Z"
+  },
+  {
+    "id": 2,
+    "source_id": 2,
+    "name": "re6865",
+    "map_name": "retroled",
+    "orders_fetch": "2026-09-18T06:51:12.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/retroled.png",
+    "company": "Retroled",
+    "address": "Retroled<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 9,
+    "max_qty_market": {
+      "3": 9
+    },
+    "list_update": 1,
+    "created_at": null,
+    "updated_at": "2026-09-18T06:51:12.000Z"
+  },
+  {
+    "id": 3,
+    "source_id": 2,
+    "name": "bestbringer",
+    "map_name": "bestbringer",
+    "orders_fetch": "2026-09-18T06:51:05.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/bestbringer.png",
+    "company": "Bestbringer",
+    "address": "Bestbringer<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 6,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": null,
+    "updated_at": "2026-09-18T06:51:05.000Z"
+  },
+  {
+    "id": 4,
+    "source_id": 2,
+    "name": "so_926407",
+    "map_name": "sunsone",
+    "orders_fetch": "2026-09-18T06:51:06.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/sunsone.png",
+    "company": "Sunsone",
+    "address": "Sunsone<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 31,
+    "max_qty_market": {
+      "71": 11
+    },
+    "list_update": 1,
+    "created_at": "2023-01-06T05:11:03.000Z",
+    "updated_at": "2026-09-18T06:51:07.000Z"
+  },
+  {
+    "id": 6,
+    "source_id": 1,
+    "name": "amazon Dcvoltage",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": "/img/channel_logos/sub_source_logos/dcvoltage.png",
+    "company": "DC Voltage",
+    "address": "DC Voltage<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 39,
+    "max_qty_market": {
+      "3": 39,
+      "77": 23
+    },
+    "list_update": 1,
+    "created_at": "2023-02-01T02:50:26.000Z",
+    "updated_at": "2026-05-18T01:13:44.000Z"
+  },
+  {
+    "id": 8,
+    "source_id": 1,
+    "name": "amazon Ledsone",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": "/img/channel_logos/sub_source_logos/ledsone.png",
+    "company": "LEDSone",
+    "address": "LEDSone<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": "GB 287587828",
+    "max_qty": 48,
+    "max_qty_market": {
+      "3": 39,
+      "71": 14,
+      "77": 23,
+      "101": 25
+    },
+    "list_update": 1,
+    "created_at": "2023-02-01T03:06:23.000Z",
+    "updated_at": "2026-06-29T06:04:29.000Z"
+  },
+  {
+    "id": 9,
+    "source_id": 1,
+    "name": "amazon SRM Amazon",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": "/img/channel_logos/sub_source_logos/srmamazon.png",
+    "company": "SRM Suppliers",
+    "address": "SRM<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 43,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-02-01T03:06:25.000Z",
+    "updated_at": "2025-08-04T00:04:33.000Z"
+  },
+  {
+    "id": 14,
+    "source_id": 1,
+    "name": "amazon Ledsonede",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": "/img/channel_logos/sub_source_logos/ledsonede.png",
+    "company": "LEDSone DE",
+    "address": "LEDSone<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-02-01T03:27:01.000Z",
+    "updated_at": "2023-02-01T03:27:01.000Z"
+  },
+  {
+    "id": 15,
+    "source_id": 1,
+    "name": "amazon Vintage light",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": "/img/channel_logos/sub_source_logos/vintagelite.png",
+    "company": "Vintagelite",
+    "address": "Vintagelite<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 21,
+    "source_id": 2,
+    "name": "dctransformer",
+    "map_name": "dctransformer",
+    "orders_fetch": "2026-09-18T06:51:05.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/dctransformer.png",
+    "company": "DC Transformer",
+    "address": "DC Transformer<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 13,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-02-14T01:49:39.000Z",
+    "updated_at": "2026-09-18T06:51:06.000Z"
+  },
+  {
+    "id": 22,
+    "source_id": 2,
+    "name": "electricalsone",
+    "map_name": "electricalsone",
+    "orders_fetch": "2026-09-18T06:51:12.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/electricalsone.png",
+    "company": "Electricalsone",
+    "address": "Electricalsone<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 31,
+    "max_qty_market": {
+      "0": 30,
+      "3": 31,
+      "77": 19
+    },
+    "list_update": 1,
+    "created_at": "2023-03-03T06:07:27.000Z",
+    "updated_at": "2026-09-18T06:51:13.000Z"
+  },
+  {
+    "id": 23,
+    "source_id": 2,
+    "name": "lighting_sone",
+    "map_name": "lightingsone",
+    "orders_fetch": "2026-09-18T06:51:08.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/lightingzone.png",
+    "company": "Lightingsone",
+    "address": "Lightingsone<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 7,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-03-07T03:00:37.000Z",
+    "updated_at": "2026-09-18T06:51:08.000Z"
+  },
+  {
+    "id": 24,
+    "source_id": 2,
+    "name": "coventrylights",
+    "map_name": "coventrylights",
+    "orders_fetch": "2026-09-18T06:51:11.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/coventrylights.png",
+    "company": "Coventry Lights",
+    "address": "Coventry Lights<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 16,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-03-07T04:29:06.000Z",
+    "updated_at": "2026-09-18T06:51:11.000Z"
+  },
+  {
+    "id": 25,
+    "source_id": 2,
+    "name": "electro_shine",
+    "map_name": "electro_shine",
+    "orders_fetch": "2025-10-02T05:00:41.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/electroshine.png",
+    "company": "Electroshine",
+    "address": "Electroshine<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 5,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-03-09T02:42:24.000Z",
+    "updated_at": "2025-10-02T05:00:42.000Z"
+  },
+  {
+    "id": 26,
+    "source_id": 2,
+    "name": "uk-lightsway",
+    "map_name": null,
+    "orders_fetch": "2024-08-30T03:51:54.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/uklightsway.png",
+    "company": "UK Lightsway",
+    "address": "UK Lightsway<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-03-09T03:01:03.000Z",
+    "updated_at": "2024-08-30T03:51:54.000Z"
+  },
+  {
+    "id": 27,
+    "source_id": 2,
+    "name": "ledsonede",
+    "map_name": "ledsonede",
+    "orders_fetch": "2026-09-18T06:51:08.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/ledsonede.png",
+    "company": "LEDSone DE",
+    "address": "LEDSone<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 27,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-03-09T03:18:01.000Z",
+    "updated_at": "2026-09-18T06:51:11.000Z"
+  },
+  {
+    "id": 28,
+    "source_id": 2,
+    "name": "huettenlampen",
+    "map_name": "huettenlampen",
+    "orders_fetch": "2026-09-18T06:51:03.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/huettenlampen.png",
+    "company": "Huettenlampen",
+    "address": "Huettenlampen<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 35,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-03-09T03:40:57.000Z",
+    "updated_at": "2026-09-18T06:51:04.000Z"
+  },
+  {
+    "id": 38,
+    "source_id": 6,
+    "name": "LEDSONEUK",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": "/img/channel_logos/sub_source_logos/ledsone.png",
+    "company": "LEDSone",
+    "address": "LEDSone<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-04-10T06:06:43.000Z",
+    "updated_at": "2023-04-10T06:06:43.000Z"
+  },
+  {
+    "id": 41,
+    "source_id": 2,
+    "name": "vintageinterior",
+    "map_name": "vintageinterior",
+    "orders_fetch": "2026-09-18T06:51:13.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/vintageinterior.png",
+    "company": "Vintageinterior",
+    "address": "Vintageinterior<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": 9,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-04-11T04:22:42.000Z",
+    "updated_at": "2026-09-18T06:51:14.000Z"
+  },
+  {
+    "id": 43,
+    "source_id": 6,
+    "name": "dcvoltage",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": "/img/channel_logos/sub_source_logos/dcvoltage.png",
+    "company": "DC Voltage",
+    "address": "DC Voltage<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-04-17T00:07:49.000Z",
+    "updated_at": "2023-04-17T00:07:49.000Z"
+  },
+  {
+    "id": 53,
+    "source_id": 11,
+    "name": "REPLACEMENT",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": "/img/channel_logos/sub_source_logos/replacement.png",
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-04-24T04:50:33.000Z",
+    "updated_at": "2023-04-24T04:50:33.000Z"
+  },
+  {
+    "id": 66,
+    "source_id": 6,
+    "name": "LEDSONEDE",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": "/img/channel_logos/sub_source_logos/ledsonede.png",
+    "company": "LEDSone DE",
+    "address": "LEDSone<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-05-21T23:38:08.000Z",
+    "updated_at": "2026-03-06T03:11:46.000Z"
+  },
+  {
+    "id": 68,
+    "source_id": 1,
+    "name": "vendor",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": "/img/channel_logos/sub_source_logos/vendor.png",
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-05-22T11:53:27.000Z",
+    "updated_at": "2023-05-22T11:53:27.000Z"
+  },
+  {
+    "id": 95,
+    "source_id": 11,
+    "name": "led_sone_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-07-05T03:30:35.000Z",
+    "updated_at": "2023-07-05T03:30:35.000Z"
+  },
+  {
+    "id": 96,
+    "source_id": 2,
+    "name": "electbout0",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-07-05T09:32:31.000Z",
+    "updated_at": "2023-07-05T09:32:31.000Z"
+  },
+  {
+    "id": 104,
+    "source_id": 3,
+    "name": "ledsone",
+    "map_name": null,
+    "orders_fetch": "2026-09-18T06:50:18.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/ledsone.png",
+    "company": "LEDSone",
+    "address": "LEDSone<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": "GB 287587828",
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-04-26T07:17:39.000Z",
+    "updated_at": "2026-09-18T06:50:57.000Z"
+  },
+  {
+    "id": 108,
+    "source_id": 3,
+    "name": "ledsone-de",
+    "map_name": null,
+    "orders_fetch": "2026-09-18T06:50:06.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/ledsonede.png",
+    "company": "LEDSone DE",
+    "address": "Ledsone LTD<br>Schmutter Str. 16<br>Trossingen<br>78647<br>Germany",
+    "vat_no": "DE 326292096",
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-07-25T02:17:18.000Z",
+    "updated_at": "2026-09-18T06:50:15.000Z"
+  },
+  {
+    "id": 109,
+    "source_id": 3,
+    "name": "vintage-light-web",
+    "map_name": null,
+    "orders_fetch": "2026-09-18T06:50:16.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/vintagelite.png",
+    "company": "Vintagelite",
+    "address": "Vintagelite<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-07-25T05:46:09.000Z",
+    "updated_at": "2026-09-18T06:50:17.000Z"
+  },
+  {
+    "id": 110,
+    "source_id": 11,
+    "name": "ledsone_shopify",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-07-26T07:15:27.000Z",
+    "updated_at": "2023-07-26T07:15:27.000Z"
+  },
+  {
+    "id": 112,
+    "source_id": 3,
+    "name": "electricalsoneuk",
+    "map_name": null,
+    "orders_fetch": "2026-09-18T06:50:15.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/electricalsone.png",
+    "company": "Electricalsone",
+    "address": "Electricalsone<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": "GB 287587828",
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-07-27T15:01:56.000Z",
+    "updated_at": "2026-09-18T06:50:16.000Z"
+  },
+  {
+    "id": 113,
+    "source_id": 3,
+    "name": "relicelectrical",
+    "map_name": null,
+    "orders_fetch": "2026-09-18T06:50:17.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/relicelectrical.png",
+    "company": "Relicelectrical",
+    "address": "Relicelectrical<br>796 E 51st Ave<br>Vancouver<br>BC V5X 1E3<br>Canada",
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-07-27T15:04:35.000Z",
+    "updated_at": "2026-09-18T06:50:18.000Z"
+  },
+  {
+    "id": 114,
+    "source_id": 11,
+    "name": "so_926407_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-07-29T05:28:30.000Z",
+    "updated_at": "2023-07-29T05:28:30.000Z"
+  },
+  {
+    "id": 115,
+    "source_id": 11,
+    "name": "coventrylights_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-07-29T22:14:50.000Z",
+    "updated_at": "2023-07-29T22:14:50.000Z"
+  },
+  {
+    "id": 116,
+    "source_id": 11,
+    "name": "amazon Dcvoltage_amazon",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-07-30T11:35:11.000Z",
+    "updated_at": "2023-07-30T11:35:11.000Z"
+  },
+  {
+    "id": 117,
+    "source_id": 11,
+    "name": "amazon Ledsone_amazon",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-07-31T06:24:02.000Z",
+    "updated_at": "2023-07-31T06:24:02.000Z"
+  },
+  {
+    "id": 118,
+    "source_id": 11,
+    "name": "electricalsone_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-07-31T07:06:42.000Z",
+    "updated_at": "2023-07-31T07:06:42.000Z"
+  },
+  {
+    "id": 119,
+    "source_id": 11,
+    "name": "electro_shine_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-07-31T21:31:55.000Z",
+    "updated_at": "2023-07-31T21:31:55.000Z"
+  },
+  {
+    "id": 120,
+    "source_id": 11,
+    "name": "ledsonede_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-07-31T22:01:50.000Z",
+    "updated_at": "2023-07-31T22:01:50.000Z"
+  },
+  {
+    "id": 122,
+    "source_id": 11,
+    "name": "dctransformer_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-01T12:23:07.000Z",
+    "updated_at": "2023-08-01T12:23:07.000Z"
+  },
+  {
+    "id": 123,
+    "source_id": 11,
+    "name": "vintageinterior_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-02T00:04:44.000Z",
+    "updated_at": "2023-08-02T00:04:44.000Z"
+  },
+  {
+    "id": 124,
+    "source_id": 11,
+    "name": "Lightingzone_etsy",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-02T03:19:51.000Z",
+    "updated_at": "2023-08-02T03:19:51.000Z"
+  },
+  {
+    "id": 125,
+    "source_id": 11,
+    "name": "CottageLightingShop_etsy",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-02T04:15:13.000Z",
+    "updated_at": "2023-08-02T04:15:13.000Z"
+  },
+  {
+    "id": 128,
+    "source_id": 11,
+    "name": "amazon Vintage light_amazon",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-03T04:59:37.000Z",
+    "updated_at": "2023-08-03T04:59:37.000Z"
+  },
+  {
+    "id": 131,
+    "source_id": 11,
+    "name": "ledsone_shopify",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-09T11:14:26.000Z",
+    "updated_at": "2023-08-09T11:14:26.000Z"
+  },
+  {
+    "id": 132,
+    "source_id": 11,
+    "name": "vintage-light-web_shopify",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-11T07:57:15.000Z",
+    "updated_at": "2023-08-11T07:57:15.000Z"
+  },
+  {
+    "id": 133,
+    "source_id": 11,
+    "name": "huettenlampen_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-17T05:09:33.000Z",
+    "updated_at": "2023-08-17T05:09:33.000Z"
+  },
+  {
+    "id": 135,
+    "source_id": 11,
+    "name": "Manual Orders_manualorder",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-18T05:25:29.000Z",
+    "updated_at": "2023-08-18T05:25:29.000Z"
+  },
+  {
+    "id": 137,
+    "source_id": 11,
+    "name": "Ledsone OnBuy_onbuy",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-19T11:56:34.000Z",
+    "updated_at": "2023-08-19T11:56:34.000Z"
+  },
+  {
+    "id": 138,
+    "source_id": 11,
+    "name": "lighting_sone_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-22T02:27:16.000Z",
+    "updated_at": "2023-08-22T02:27:16.000Z"
+  },
+  {
+    "id": 139,
+    "source_id": 11,
+    "name": "amazon SRM Amazon_amazon",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-22T03:28:49.000Z",
+    "updated_at": "2023-08-22T03:28:49.000Z"
+  },
+  {
+    "id": 140,
+    "source_id": 11,
+    "name": "led_sone_ebay_replacement",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-22T08:04:03.000Z",
+    "updated_at": "2023-08-22T08:04:03.000Z"
+  },
+  {
+    "id": 142,
+    "source_id": 11,
+    "name": "LEDSONEUK_wayfair",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-24T05:55:41.000Z",
+    "updated_at": "2023-08-24T05:55:41.000Z"
+  },
+  {
+    "id": 143,
+    "source_id": 11,
+    "name": "amazon Ledsone_amazon_replacement",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-24T06:26:04.000Z",
+    "updated_at": "2023-08-24T06:26:04.000Z"
+  },
+  {
+    "id": 144,
+    "source_id": 11,
+    "name": "dcvoltage_wayfair",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-27T23:55:34.000Z",
+    "updated_at": "2023-08-27T23:55:34.000Z"
+  },
+  {
+    "id": 145,
+    "source_id": 11,
+    "name": "bestbringer_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-28T05:07:24.000Z",
+    "updated_at": "2023-08-28T05:07:24.000Z"
+  },
+  {
+    "id": 146,
+    "source_id": 11,
+    "name": "ledsone avasam_avasam",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-29T07:42:18.000Z",
+    "updated_at": "2023-08-29T07:42:18.000Z"
+  },
+  {
+    "id": 147,
+    "source_id": 11,
+    "name": "led_sone_ebay_resend",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-08-30T03:53:59.000Z",
+    "updated_at": "2023-08-30T03:53:59.000Z"
+  },
+  {
+    "id": 148,
+    "source_id": 11,
+    "name": "Lightingzone_etsy_replacement",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-09-04T03:14:34.000Z",
+    "updated_at": "2023-09-04T03:14:34.000Z"
+  },
+  {
+    "id": 150,
+    "source_id": 11,
+    "name": "re6865_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-09-05T07:05:34.000Z",
+    "updated_at": "2023-09-05T07:05:34.000Z"
+  },
+  {
+    "id": 151,
+    "source_id": 11,
+    "name": "ledsone-de_shopify",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-09-06T05:37:34.000Z",
+    "updated_at": "2023-09-06T05:37:34.000Z"
+  },
+  {
+    "id": 152,
+    "source_id": 11,
+    "name": "electricalsone_ebay_replacement",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-09-07T04:05:27.000Z",
+    "updated_at": "2023-09-07T04:05:27.000Z"
+  },
+  {
+    "id": 154,
+    "source_id": 11,
+    "name": "huettenlampen_ebay_resend",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-09-08T03:34:18.000Z",
+    "updated_at": "2023-09-08T03:34:18.000Z"
+  },
+  {
+    "id": 156,
+    "source_id": 11,
+    "name": "amazon Dcvoltage_amazon_replacement",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-09-11T03:57:03.000Z",
+    "updated_at": "2023-09-11T03:57:03.000Z"
+  },
+  {
+    "id": 157,
+    "source_id": 11,
+    "name": "Bol_bol",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-09-14T00:26:39.000Z",
+    "updated_at": "2023-09-14T00:26:39.000Z"
+  },
+  {
+    "id": 161,
+    "source_id": 2,
+    "name": "koneswaransrikanesh",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-09-20T05:00:18.000Z",
+    "updated_at": "2023-09-20T05:00:18.000Z"
+  },
+  {
+    "id": 163,
+    "source_id": 11,
+    "name": "ledsone mano_manomano",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-09-22T10:43:36.000Z",
+    "updated_at": "2023-09-22T10:43:36.000Z"
+  },
+  {
+    "id": 164,
+    "source_id": 1,
+    "name": "amazon RelicElectrical",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-09-24T13:13:18.000Z",
+    "updated_at": "2023-09-24T13:13:18.000Z"
+  },
+  {
+    "id": 165,
+    "source_id": 1,
+    "name": "amazon Cottage Lighting",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-09-24T13:13:19.000Z",
+    "updated_at": "2023-09-24T13:13:19.000Z"
+  },
+  {
+    "id": 166,
+    "source_id": 11,
+    "name": "LEDSONEUK_wayfair_replacement",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-09-25T06:10:29.000Z",
+    "updated_at": "2023-09-25T06:10:29.000Z"
+  },
+  {
+    "id": 170,
+    "source_id": 11,
+    "name": "electricalsone_ebay_resend",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-10-07T21:53:24.000Z",
+    "updated_at": "2023-10-07T21:53:24.000Z"
+  },
+  {
+    "id": 173,
+    "source_id": 11,
+    "name": "LEDSONEDE_wayfair",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-10-12T00:16:49.000Z",
+    "updated_at": "2023-10-12T00:16:49.000Z"
+  },
+  {
+    "id": 175,
+    "source_id": 11,
+    "name": "amazon RelicElectrical_amazon",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-10-23T05:21:59.000Z",
+    "updated_at": "2023-10-23T05:21:59.000Z"
+  },
+  {
+    "id": 176,
+    "source_id": 11,
+    "name": "Manual_manual om",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-10-23T07:06:02.000Z",
+    "updated_at": "2023-10-23T07:06:02.000Z"
+  },
+  {
+    "id": 178,
+    "source_id": 11,
+    "name": "Retrolight_etsy",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-11-06T03:51:15.000Z",
+    "updated_at": "2023-11-06T03:51:15.000Z"
+  },
+  {
+    "id": 179,
+    "source_id": 11,
+    "name": "amazon SRM Amazon_amazon_replacement",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-11-08T02:37:07.000Z",
+    "updated_at": "2023-11-08T02:37:07.000Z"
+  },
+  {
+    "id": 181,
+    "source_id": 11,
+    "name": "so_926407_ebay_replacement",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-11-15T08:18:56.000Z",
+    "updated_at": "2023-11-15T08:18:56.000Z"
+  },
+  {
+    "id": 185,
+    "source_id": 11,
+    "name": "amazon Cottage Lighting_amazon",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-12-07T08:16:02.000Z",
+    "updated_at": "2023-12-07T08:16:02.000Z"
+  },
+  {
+    "id": 191,
+    "source_id": 11,
+    "name": "electricalsoneuk_shopify",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-01-01T03:40:45.000Z",
+    "updated_at": "2024-01-01T03:40:45.000Z"
+  },
+  {
+    "id": 192,
+    "source_id": 11,
+    "name": "relicelectrical_shopify",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-01-02T02:51:49.000Z",
+    "updated_at": "2024-01-02T02:51:49.000Z"
+  },
+  {
+    "id": 194,
+    "source_id": 11,
+    "name": "amazon Ledsone_amazon_resend",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-01-08T02:31:35.000Z",
+    "updated_at": "2024-01-08T02:31:35.000Z"
+  },
+  {
+    "id": 198,
+    "source_id": 3,
+    "name": "045e77-2",
+    "map_name": "BesBet",
+    "orders_fetch": "2026-09-18T06:50:17.000Z",
+    "logo": "/img/channel_logos/sub_source_logos/besbet.png",
+    "company": "BesBet",
+    "address": "Besbet<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": "GB 287587828",
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2024-01-28T22:20:46.000Z",
+    "updated_at": "2026-09-18T06:50:17.000Z"
+  },
+  {
+    "id": 200,
+    "source_id": 3,
+    "name": "LEDSone UK Ltd",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-02-02T07:21:57.000Z",
+    "updated_at": "2024-02-02T07:21:57.000Z"
+  },
+  {
+    "id": 202,
+    "source_id": 11,
+    "name": "045e77-2_shopify",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-02-29T06:17:53.000Z",
+    "updated_at": "2024-02-29T06:17:53.000Z"
+  },
+  {
+    "id": 204,
+    "source_id": 3,
+    "name": "Vintagelite",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-03-07T07:20:41.000Z",
+    "updated_at": "2024-03-07T07:20:41.000Z"
+  },
+  {
+    "id": 205,
+    "source_id": 2,
+    "name": "nanthinvasude-0",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-03-07T07:23:19.000Z",
+    "updated_at": "2024-03-07T07:23:19.000Z"
+  },
+  {
+    "id": 207,
+    "source_id": 3,
+    "name": "relicelectrical.myshopify.com",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-03-07T07:29:08.000Z",
+    "updated_at": "2024-03-07T07:29:08.000Z"
+  },
+  {
+    "id": 209,
+    "source_id": 3,
+    "name": "Electrical sone",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-03-11T07:57:40.000Z",
+    "updated_at": "2024-03-11T07:57:40.000Z"
+  },
+  {
+    "id": 211,
+    "source_id": 2,
+    "name": "ur26574",
+    "map_name": "urigal",
+    "orders_fetch": "2026-09-18T06:51:11.000Z",
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": 3,
+    "max_qty_market": {
+      "3": 5
+    },
+    "list_update": 1,
+    "created_at": null,
+    "updated_at": "2026-09-18T06:51:12.000Z"
+  },
+  {
+    "id": 212,
+    "source_id": 11,
+    "name": "ur26574_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-04-29T04:59:52.000Z",
+    "updated_at": "2024-04-29T04:59:52.000Z"
+  },
+  {
+    "id": 214,
+    "source_id": 6,
+    "name": "LEDSone UK Castlegate",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": "/img/channel_logos/sub_source_logos/ledsone.png",
+    "company": "LEDSone",
+    "address": "LEDSone<br>Unit 3 Marshbrook Cl<br>Lythalls Ln<br>Aldermans Green Industrial Estate<br>Coventry<br>CV2 2NW<br>United Kingdom",
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-04-10T06:06:43.000Z",
+    "updated_at": "2023-04-10T06:06:43.000Z"
+  },
+  {
+    "id": 215,
+    "source_id": 2,
+    "name": "cottagelighting",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-03-07T07:23:19.000Z",
+    "updated_at": "2024-03-07T07:23:19.000Z"
+  },
+  {
+    "id": 222,
+    "source_id": 2,
+    "name": "homin_gmbh",
+    "map_name": "homin_gmbh",
+    "orders_fetch": "2026-09-18T06:51:04.000Z",
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": 13,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2024-09-15T23:02:44.000Z",
+    "updated_at": "2026-09-18T06:51:05.000Z"
+  },
+  {
+    "id": 223,
+    "source_id": 11,
+    "name": "ledsonede_ebay_replacement",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-09-16T03:38:37.000Z",
+    "updated_at": "2024-09-16T03:38:37.000Z"
+  },
+  {
+    "id": 226,
+    "source_id": 11,
+    "name": "homin_gmbh_ebay",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-11-18T04:38:54.000Z",
+    "updated_at": "2024-11-18T04:38:54.000Z"
+  },
+  {
+    "id": 228,
+    "source_id": 11,
+    "name": "huettenlampen_ebay_replacement",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2024-12-14T01:13:58.000Z",
+    "updated_at": "2024-12-14T01:13:58.000Z"
+  },
+  {
+    "id": 229,
+    "source_id": 1,
+    "name": "amazon Homin gmbh",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2023-09-24T13:13:19.000Z",
+    "updated_at": "2023-09-24T13:13:19.000Z"
+  },
+  {
+    "id": 230,
+    "source_id": 2,
+    "name": "longtek020",
+    "map_name": "longtek020",
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-07-05T09:32:31.000Z",
+    "updated_at": "2023-07-05T09:32:31.000Z"
+  },
+  {
+    "id": 231,
+    "source_id": 2,
+    "name": "ledpedia",
+    "map_name": "ledpedia",
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2023-07-05T09:32:31.000Z",
+    "updated_at": "2023-07-05T09:32:31.000Z"
+  },
+  {
+    "id": 233,
+    "source_id": 3,
+    "name": "jedsz8-km",
+    "map_name": "LEDSone FR",
+    "orders_fetch": "2026-09-18T06:50:58.000Z",
+    "logo": null,
+    "company": "LED Sone FR",
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": 1,
+    "created_at": "2025-02-06T00:27:26.000Z",
+    "updated_at": "2026-09-18T06:50:58.000Z"
+  },
+  {
+    "id": 234,
+    "source_id": 11,
+    "name": "ledsone_shopify_replacement",
+    "map_name": null,
+    "orders_fetch": null,
+    "logo": null,
+    "company": null,
+    "address": null,
+    "vat_no": null,
+    "max_qty": null,
+    "max_qty_market": null,
+    "list_update": null,
+    "created_at": "2025-02-10T00:53:45.000Z",
+    "updated_at": "2025-02-10T00:53:45.000Z"
+  }
+]
+
+=== all keyword columns ===
+amazon_campaigns.keyword_performance_data.ad_keyword_status
+amazon_campaigns.keyword_performance_data.keyword_id
+amazon_campaigns.keyword_performance_data.keyword_text
+amazon_campaigns.keyword_performance_data.source_keyword_id
+amazon_campaigns.keywords.keyword_bid
+amazon_campaigns.keywords.keyword_id
+amazon_campaigns.keywords.keyword_text
+amazon_campaigns.search_term_performance_data.keyword
+amazon_campaigns.search_term_performance_data.keyword_bid
+google_ads.keywords.keyword_text
+listings.amazon_listing_search_engine_keywords.keyword
+
+=== amazon_campaigns.keywords cols ===
+id (bigint)
+keyword_id (bigint)
+ad_group_id (bigint)
+campaign_id (bigint)
+sub_source (integer)
+market_place (integer)
+keyword_text (character varying)
+match_type (character varying)
+state (character varying)
+keyword_bid (numeric)
+bid_updated_by (integer)
+bid_updated_at (timestamp without time zone)
+created_at (timestamp without time zone)
+updated_at (timestamp without time zone)
+
+=== amazon_campaigns.keywords sample ===
+[
+  {
+    "id": "1596",
+    "keyword_id": "266836799575369",
+    "ad_group_id": "201812661457865",
+    "campaign_id": "109331812521701",
+    "sub_source": 8,
+    "market_place": 10,
+    "keyword_text": "e27 led edison vintage",
+    "match_type": "BROAD",
+    "state": "ARCHIVED",
+    "keyword_bid": "0.52",
+    "bid_updated_by": null,
+    "bid_updated_at": null,
+    "created_at": "2023-10-06T02:29:29.000Z",
+    "updated_at": "2026-09-18T02:21:27.000Z"
+  },
+  {
+    "id": "7393",
+    "keyword_id": "7622084557792",
+    "ad_group_id": "216698124979724",
+    "campaign_id": "222017706725243",
+    "sub_source": 8,
+    "market_place": 23,
+    "keyword_text": "black ceiling light shade",
+    "match_type": "EXACT",
+    "state": "ARCHIVED",
+    "keyword_bid": "0.98",
+    "bid_updated_by": null,
+    "bid_updated_at": null,
+    "created_at": "2023-10-06T02:29:54.000Z",
+    "updated_at": "2026-09-18T02:21:01.000Z"
+  },
+  {
+    "id": "9979",
+    "keyword_id": "230770616422520",
+    "ad_group_id": "238829995150080",
+    "campaign_id": "218019271068480",
+    "sub_source": 6,
+    "market_place": 14,
+    "keyword_text": "trasformatore di alimentazione",
+    "match_type": "BROAD",
+    "state": "ENABLED",
+    "keyword_bid": "0.32",
+    "bid_updated_by": null,
+    "bid_updated_at": null,
+    "created_at": "2023-10-06T02:30:22.000Z",
+    "updated_at": "2026-09-18T02:21:36.000Z"
+  },
+  {
+    "id": "9981",
+    "keyword_id": "14216842213175",
+    "ad_group_id": "238829995150080",
+    "campaign_id": "218019271068480",
+    "sub_source": 6,
+    "market_place": 14,
+    "keyword_text": "led trasformatore 12v",
+    "match_type": "BROAD",
+    "state": "PAUSED",
+    "keyword_bid": "0.47",
+    "bid_updated_by": null,
+    "bid_updated_at": null,
+    "created_at": "2023-10-06T02:30:22.000Z",
+    "updated_at": "2026-09-18T02:21:36.000Z"
+  },
+  {
+    "id": "10616",
+    "keyword_id": "177763487948004",
+    "ad_group_id": "17907734796147",
+    "campaign_id": "121493318372638",
+    "sub_source": 6,
+    "market_place": 21,
+    "keyword_text": "bombillas retro",
+    "match_type": "BROAD",
+    "state": "ENABLED",
+    "keyword_bid": "0.00",
+    "bid_updated_by": null,
+    "bid_updated_at": null,
+    "created_at": "2023-10-06T02:30:27.000Z",
+    "updated_at": "2025-10-01T19:03:36.000Z"
+  }
+]
+
+=== amazon_campaigns.search_term_sku_data cols ===
+id (integer)
+search_term_performance_id (integer)
+source (character varying)
+sub_source_name (character varying)
+market_place_name (character varying)
+date (date)
+asin (character varying)
+sku (character varying)
+category (character varying)
+campaign_id (bigint)
+ad_group_id (bigint)
+impressions (integer)
+clicks (integer)
+orders (integer)
+sales (numeric)
+spend (numeric)
+created_at (timestamp without time zone)
+updated_at (timestamp without time zone)
+
+=== amazon_campaigns.search_term_sku_data sample ===
+[
+  {
+    "id": 1219,
+    "search_term_performance_id": 3334840,
+    "source": "amazon",
+    "sub_source_name": "LEDSONE",
+    "market_place_name": "United Kingdom",
+    "date": "2025-12-30T18:30:00.000Z",
+    "asin": "B0DCJZ9H8Y",
+    "sku": "SPSDP3YB2PK",
+    "category": "storage hook",
+    "campaign_id": "511440123561029",
+    "ad_group_id": "282515983374356",
+    "impressions": 87,
+    "clicks": 1,
+    "orders": 1,
+    "sales": "5.16",
+    "spend": "0.24",
+    "created_at": "2026-02-16T21:49:26.000Z",
+    "updated_at": "2026-02-16T21:49:26.000Z"
+  },
+  {
+    "id": 1347,
+    "search_term_performance_id": 4747657,
+    "source": "amazon",
+    "sub_source_name": "LEDSONE",
+    "market_place_name": "United Kingdom",
+    "date": "2025-12-31T18:30:00.000Z",
+    "asin": "B0F6THWDY6",
+    "sku": "CRSF100BM+PHHT2PBRBM+LSHM400HE_1",
+    "category": "light fixture",
+    "campaign_id": "399697671045723",
+    "ad_group_id": "390039143096477",
+    "impressions": 90,
+    "clicks": 3,
+    "orders": 1,
+    "sales": "30.74",
+    "spend": "0.95",
+    "created_at": "2026-02-16T21:59:42.000Z",
+    "updated_at": "2026-02-16T21:59:42.000Z"
+  },
+  {
+    "id": 3,
+    "search_term_performance_id": 73044751,
+    "source": "amazon",
+    "sub_source_name": "LEDSONE",
+    "market_place_name": "United Kingdom",
+    "date": "2026-02-11T18:30:00.000Z",
+    "asin": "B0CBMQZ8P6",
+    "sku": "PHSF2BMRBM+SPSDP2BM_T",
+    "category": "light fixture",
+    "campaign_id": "327294804623431",
+    "ad_group_id": "343803800951735",
+    "impressions": 2508,
+    "clicks": 11,
+    "orders": 2,
+    "sales": "25.64",
+    "spend": "4.04",
+    "created_at": "2026-02-16T06:23:00.000Z",
+    "updated_at": "2026-02-16T06:23:00.000Z"
+  },
+  {
+    "id": 4,
+    "search_term_performance_id": 73584258,
+    "source": "amazon",
+    "sub_source_name": "LEDSONE",
+    "market_place_name": "United Kingdom",
+    "date": "2026-02-11T18:30:00.000Z",
+    "asin": "B0D8P8N5BM",
+    "sku": "LDLIE27BO82PK kk",
+    "category": "light bulb",
+    "campaign_id": "322243155704716",
+    "ad_group_id": "446368323162340",
+    "impressions": 1,
+    "clicks": 1,
+    "orders": 1,
+    "sales": "14.82",
+    "spend": "0.16",
+    "created_at": "2026-02-16T06:23:00.000Z",
+    "updated_at": "2026-02-16T06:23:00.000Z"
+  },
+  {
+    "id": 5,
+    "search_term_performance_id": 72072072,
+    "source": "amazon",
+    "sub_source_name": "LEDSONE",
+    "market_place_name": "United Kingdom",
+    "date": "2026-02-11T18:30:00.000Z",
+    "asin": "B0CVL9XQ1L",
+    "sku": "LSEL400YE+RPR44WH",
+    "category": "lampshade",
+    "campaign_id": "456469300429042",
+    "ad_group_id": "326844431165722",
+    "impressions": 53,
+    "clicks": 1,
+    "orders": 2,
+    "sales": "24.90",
+    "spend": "0.31",
+    "created_at": "2026-02-16T06:23:00.000Z",
+    "updated_at": "2026-02-16T06:23:00.000Z"
+  }
+]
+
+=== google_ads.keywords cols ===
+id (bigint)
+account_id (bigint)
+campaign_id (bigint)
+ad_group_id (bigint)
+criterion_id (bigint)
+resource_name (character varying)
+status (character varying)
+keyword_text (text)
+match_type (character varying)
+is_negative (boolean)
+final_urls (text)
+raw_json (jsonb)
+
+=== google_ads.keywords sample ===
+[
+  {
+    "id": "186",
+    "account_id": "4503486236",
+    "campaign_id": "18280350909",
+    "ad_group_id": "137920996941",
+    "criterion_id": "297284552561",
+    "resource_name": "customers/4503486236/adGroupCriteria/137920996941~297284552561",
+    "status": "ENABLED",
+    "keyword_text": "1 black iron pipe",
+    "match_type": "EXACT",
+    "is_negative": true,
+    "final_urls": null,
+    "raw_json": {
+      "adGroup": {
+        "id": "137920996941",
+        "name": "Ceiling lights",
+        "resourceName": "customers/4503486236/adGroups/137920996941"
+      },
+      "campaign": {
+        "id": "18280350909",
+        "name": "Shopping Campaign 9/9/22",
+        "resourceName": "customers/4503486236/campaigns/18280350909",
+        "advertisingChannelType": "SHOPPING"
+      },
+      "customer": {
+        "id": "4503486236",
+        "resourceName": "customers/4503486236"
+      },
+      "adGroupCriterion": {
+        "type": "KEYWORD",
+        "status": "ENABLED",
+        "keyword": {
+          "text": "1 black iron pipe",
+          "matchType": "EXACT"
+        },
+        "negative": true,
+        "criterionId": "297284552561",
+        "resourceName": "customers/4503486236/adGroupCriteria/137920996941~297284552561"
+      }
+    }
+  },
+  {
+    "id": "204",
+    "account_id": "4503486236",
+    "campaign_id": "18280350909",
+    "ad_group_id": "137920996941",
+    "criterion_id": "313818094008",
+    "resource_name": "customers/4503486236/adGroupCriteria/137920996941~313818094008",
+    "status": "ENABLED",
+    "keyword_text": "1 4 bsp pipe fittings",
+    "match_type": "EXACT",
+    "is_negative": true,
+    "final_urls": null,
+    "raw_json": {
+      "adGroup": {
+        "id": "137920996941",
+        "name": "Ceiling lights",
+        "resourceName": "customers/4503486236/adGroups/137920996941"
+      },
+      "campaign": {
+        "id": "18280350909",
+        "name": "Shopping Campaign 9/9/22",
+        "resourceName": "customers/4503486236/campaigns/18280350909",
+        "advertisingChannelType": "SHOPPING"
+      },
+      "customer": {
+        "id": "4503486236",
+        "resourceName": "customers/4503486236"
+      },
+      "adGroupCriterion": {
+        "type": "KEYWORD",
+        "status": "ENABLED",
+        "keyword": {
+          "text": "1 4 bsp pipe fittings",
+          "matchType": "EXACT"
+        },
+        "negative": true,
+        "criterionId": "313818094008",
+        "resourceName": "customers/4503486236/adGroupCriteria/137920996941~313818094008"
+      }
+    }
+  },
+  {
+    "id": "207",
+    "account_id": "4503486236",
+    "campaign_id": "18280350909",
+    "ad_group_id": "137920996941",
+    "criterion_id": "315770038781",
+    "resource_name": "customers/4503486236/adGroupCriteria/137920996941~315770038781",
+    "status": "ENABLED",
+    "keyword_text": "1 gang usb socket",
+    "match_type": "EXACT",
+    "is_negative": true,
+    "final_urls": null,
+    "raw_json": {
+      "adGroup": {
+        "id": "137920996941",
+        "name": "Ceiling lights",
+        "resourceName": "customers/4503486236/adGroups/137920996941"
+      },
+      "campaign": {
+        "id": "18280350909",
+        "name": "Shopping Campaign 9/9/22",
+        "resourceName": "customers/4503486236/campaigns/18280350909",
+        "advertisingChannelType": "SHOPPING"
+      },
+      "customer": {
+        "id": "4503486236",
+        "resourceName": "customers/4503486236"
+      },
+      "adGroupCriterion": {
+        "type": "KEYWORD",
+        "status": "ENABLED",
+        "keyword": {
+          "text": "1 gang usb socket",
+          "matchType": "EXACT"
+        },
+        "negative": true,
+        "criterionId": "315770038781",
+        "resourceName": "customers/4503486236/adGroupCriteria/137920996941~315770038781"
+      }
+    }
+  },
+  {
+    "id": "208",
+    "account_id": "4503486236",
+    "campaign_id": "18280350909",
+    "ad_group_id": "137920996941",
+    "criterion_id": "316578148223",
+    "resource_name": "customers/4503486236/adGroupCriteria/137920996941~316578148223",
+    "status": "ENABLED",
+    "keyword_text": "1 2 iron pipe",
+    "match_type": "EXACT",
+    "is_negative": true,
+    "final_urls": null,
+    "raw_json": {
+      "adGroup": {
+        "id": "137920996941",
+        "name": "Ceiling lights",
+        "resourceName": "customers/4503486236/adGroups/137920996941"
+      },
+      "campaign": {
+        "id": "18280350909",
+        "name": "Shopping Campaign 9/9/22",
+        "resourceName": "customers/4503486236/campaigns/18280350909",
+        "advertisingChannelType": "SHOPPING"
+      },
+      "customer": {
+        "id": "4503486236",
+        "resourceName": "customers/4503486236"
+      },
+      "adGroupCriterion": {
+        "type": "KEYWORD",
+        "status": "ENABLED",
+        "keyword": {
+          "text": "1 2 iron pipe",
+          "matchType": "EXACT"
+        },
+        "negative": true,
+        "criterionId": "316578148223",
+        "resourceName": "customers/4503486236/adGroupCriteria/137920996941~316578148223"
+      }
+    }
+  },
+  {
+    "id": "210",
+    "account_id": "4503486236",
+    "campaign_id": "18280350909",
+    "ad_group_id": "137920996941",
+    "criterion_id": "326517286924",
+    "resource_name": "customers/4503486236/adGroupCriteria/137920996941~326517286924",
+    "status": "ENABLED",
+    "keyword_text": "1 8 ip lamp pipe",
+    "match_type": "EXACT",
+    "is_negative": true,
+    "final_urls": null,
+    "raw_json": {
+      "adGroup": {
+        "id": "137920996941",
+        "name": "Ceiling lights",
+        "resourceName": "customers/4503486236/adGroups/137920996941"
+      },
+      "campaign": {
+        "id": "18280350909",
+        "name": "Shopping Campaign 9/9/22",
+        "resourceName": "customers/4503486236/campaigns/18280350909",
+        "advertisingChannelType": "SHOPPING"
+      },
+      "customer": {
+        "id": "4503486236",
+        "resourceName": "customers/4503486236"
+      },
+      "adGroupCriterion": {
+        "type": "KEYWORD",
+        "status": "ENABLED",
+        "keyword": {
+          "text": "1 8 ip lamp pipe",
+          "matchType": "EXACT"
+        },
+        "negative": true,
+        "criterionId": "326517286924",
+        "resourceName": "customers/4503486236/adGroupCriteria/137920996941~326517286924"
+      }
+    }
+  }
+]
+
+=== polycrome columns ===
+(none)

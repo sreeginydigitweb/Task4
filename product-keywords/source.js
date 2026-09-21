@@ -68,12 +68,21 @@ export function classifyKeywords(title, recorded = {}) {
  * Reports on the values `classifyKeywords` produces; it changes none of them.
  * See keywordTermSources for what 'db', 'gen' and 'mix' mean.
  *
+ * `platform` is the third argument the generator needs for the PRIMARY
+ * keyword's tag: the real marketplace this product is listed on, resolved from
+ * a listing row by SKU in `findProductKeywordPage` and carried on the row as
+ * `product.platform`. It is read from the database, never derived from the
+ * title, and it is null for a product ledsone lists nowhere - in which case
+ * the primary keyword shows no tag rather than a guessed one. See
+ * PLATFORM_RESOURCE in keyword-generator.js.
+ *
  * @param {unknown} title
  * @param {Partial<{primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}>} [recorded]
+ * @param {string|null} [platform]  A PLATFORM_RESOURCE proven from a listing row.
  * @returns {ReturnType<typeof keywordTermSources>}
  */
-export function classifyKeywordTerms(title, recorded = {}) {
-  return keywordTermSources(title, recorded);
+export function classifyKeywordTerms(title, recorded = {}, platform = null) {
+  return keywordTermSources(title, recorded, platform);
 }
 
 /**

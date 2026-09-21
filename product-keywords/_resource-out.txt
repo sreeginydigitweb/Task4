@@ -1,0 +1,207 @@
+﻿
+=== inventory.products columns ===
+id (bigint)
+title (text)
+sku (character varying)
+sku_original (character varying)
+description (text)
+eng_description (text)
+chinese_decription (text)
+instruction_link (character varying)
+inventory_bool (boolean)
+created_at (timestamp without time zone)
+updated_at (timestamp without time zone)
+
+=== inventory.products row id=1 ===
+{
+  "id": "1",
+  "title": "12.8cm Brass Pull and Push Door Handle, Solid Antique Vintage Style Body, Replacement Door Handle for Kitchen Cabinet Cupboard Drawer Furniture Cupboard Dresser Wardrobe.",
+  "sku": "HLBP128BB",
+  "sku_original": "HLBP128BB",
+  "description": "12.8cm Brass Pull and Push Door Handle, Solid Antique Vintage Style Body, Replacement Door Handle for Kitchen Cabinet Cupboard Drawer Furniture Cupboard Dresser Wardrobe.",
+  "eng_description": null,
+  "chinese_decription": null,
+  "instruction_link": null,
+  "inventory_bool": true,
+  "created_at": "2024-10-25T05:50:42.000Z",
+  "updated_at": "2026-08-02T03:32:15.000Z"
+}
+
+=== product 1 sku ===
+HLBP128BB
+
+=== listings tables ===
+amazon_listing_bullet_points
+amazon_listing_images
+amazon_listing_search_engine_keywords
+amazon_listings
+amazon_marketplaces
+bandq_attribute_values_common
+bandq_attribute_values_unique
+bandq_categories
+bandq_category_attribute_map
+bandq_category_attributes
+bandq_category_csv
+bandq_leaf_categories
+bandq_listings
+bandq_transfers
+ebay_listing_images
+ebay_listings
+ebay_listings_parent_child_mapping
+market_place_id_mapping
+shopify_collection_products
+shopify_collections
+shopify_listing_images
+shopify_listing_meta
+shopify_listing_tag
+shopify_listings
+shopify_listings_parent_child_mapping
+
+=== listings.amazon_listings for sku HLBP128BB ===
+[
+  {
+    "id": "994083",
+    "asin": "B0GZH6NKYK",
+    "parent_sku": "HLBP128BB_SAPH",
+    "sku": "HLBP128BB",
+    "mapped_sku": null,
+    "price": "3.19",
+    "currency": "GBP",
+    "title": "128mm Brass Cabinet Handles | Antique Vintage Drawer Pulls | Kitchen Cupboard Wardrobe Door Handles (Pack of 1)",
+    "product_description": "<h3> Product Description</h3>\n<p>Upgrade your furniture with the <b>DC VOLTAGE Antique Brushed Brass Cabinet Handles</b>, designed to combine durability with a modern, elegant finish. The unique twisted design and premium brushed brass coating enhance the look of cabinets, drawers, and wardrobes, making them a perfect choice for both home and office interiors.</p>\n\n<p>Crafted from quality metal, these handles offer excellent strength, corrosion resistance, and long-lasting performance. The ergonomic grip ensures comfortable daily use, while the standard sizing allows easy replacement of existing handles.</p>\n\n<p>Ideal for kitchens, bedrooms, and commercial spaces, this handle delivers both functionality and style in one simple upgrade.</p>\n\n<br>\n\n<h3> Key Features</h3>\n<ul>\n  <li>Premium antique brushed brass finish for a modern and elegant look</li>\n  <li>Strong and durable metal construction for long-term use</li>\n  <li>Ergonomic twisted design for a comfortable grip</li>\n  <li>Corrosion and rust-resistant surface</li>\n  <li>Standard 128mm hole centres for universal compatibility</li>\n  <li>Easy installation with included fixing screws</li>\n  <li>Suitable for cabinets, drawers, wardrobes, cupboards, and furniture doors</li>\n</ul>\n\n<br>\n\n<h3>Specifications</h3>\n<ul>\n  <li><b>Brand:</b> DC VOLTAGE</li>\n  <li><b>Product Type:</b> Cabinet Handle / Drawer Pull</li>\n  <li><b>Style:</b> Modern</li>\n  <li><b>Material:</b> Metal</li>\n  <li><b>Finish:</b> Antique Brushed Brass</li>\n  <li><b>Total Length:</b> 128mm</li>\n  <li><b>Installation Type:</b> Screw Fix (Rear Mount)</li>\n  <li><b>Included Components:</b> Pull Handle(s) </li>\n  <li><b>Suitable For:</b> Kitchen cabinets, cupboards, wardrobes, drawers, dressers, furniture</li>\n</ul>\n\n<br>\n\n<p><b>Available in multiple pack sizes – choose the perfect option for your project.</b></p>",
+    "quantity": 39,
+    "main_image_url": "https://m.media-amazon.com/images/I/51OLs8VuVXL.jpg",
+    "category_id": "1938419031",
+    "product_type": "HARDWARE_HANDLE",
+    "region": "Europe",
+    "region_id": 1,
+    "site": "UK",
+    "listing_url": "https://www.amazon.co.uk/gp/product/B0GZH6NKYK",
+    "status": "Active",
+    "selected_variations": [
+      {
+        "name": "number_of_items",
+        "value": 1
+      }
+    ],
+    "is_parent": 0,
+    "is_child": 1,
+    "all_list": 1,
+    "sub_source": 8,
+    "listing_max_platform_stock": null,
+    "alternative_warehouse": null,
+    "fulfilment": "merchant",
+    "shipping_id": "81e69a1f-c422-4f7a-a1e3-917dc9765b67",
+    "end_date": null,
+    "is_ended": 0,
+    "wrong_sku": 0,
+    "created_at": "2026-05-04T02:46:21.000Z",
+    "updated_at": "2026-09-17T21:31:01.000Z"
+  }
+]
+
+=== listings.ebay_listings ===
+ERR: column "mapped_sku" does not exist
+
+=== listings.shopify_listings for sku HLBP128BB ===
+[
+  {
+    "id": 666760,
+    "item_id": "45312625311899",
+    "parent_sku": null,
+    "sku": "HLBP128BB",
+    "mapped_sku": null,
+    "price": "4.19",
+    "compare_price": null,
+    "currency": null,
+    "title": "Default Title",
+    "product_description": null,
+    "quantity": 187,
+    "main_image_url": "https://cdn.shopify.com/s/files/1/0573/8178/1659/files/61B8yb9zyDL.jpg?v=1783576633",
+    "product_type": "Handles",
+    "site": "UK",
+    "listing_url": "https://electricalsone.co.uk/products/traditional-vintage-door-pattern-handles-kitchen-cupboard-wardrobe-drawer-knobs?variant=45312625311899",
+    "shopify_handle": null,
+    "channel": "Electricalsone",
+    "status": "active",
+    "selected_variations": [
+      {
+        "Name": "Title",
+        "Value": "Default Title"
+      }
+    ],
+    "is_parent": 0,
+    "is_child": 1,
+    "all_list": 1,
+    "sub_source": 112,
+    "listing_max_platform_stock": null,
+    "alternative_warehouse": null,
+    "shop_inv_item_id": "47405323026587",
+    "image_id": null,
+    "image_pos": 7,
+    "alt_text": null,
+    "wrong_sku": 0,
+    "created_at": "2024-07-29T04:34:26.000Z",
+    "updated_at": "2026-09-17T21:30:55.000Z"
+  }
+]
+
+=== listings.bandq_listings for sku HLBP128BB ===
+[]
+
+=== listings keyword/source-like columns ===
+amazon_listing_images.image_url (character varying)
+amazon_listing_search_engine_keywords.keyword (text)
+amazon_listings.listing_url (character varying)
+amazon_listings.main_image_url (character varying)
+amazon_listings.product_type (character varying)
+amazon_listings.site (character varying)
+amazon_listings.sub_source (integer)
+amazon_marketplaces.url (character varying)
+bandq_listings.channel (character varying)
+bandq_listings.listing_url (text)
+bandq_listings.main_image_url (text)
+bandq_listings.product_type (character varying)
+bandq_listings.site (character varying)
+bandq_listings.sub_source (integer)
+bandq_transfers.file_url (text)
+ebay_listing_images.image_url (character varying)
+ebay_listings.listing_url (character varying)
+ebay_listings.main_image_url (character varying)
+ebay_listings.product_type (character varying)
+ebay_listings.site (character varying)
+ebay_listings.sub_source (integer)
+market_place_id_mapping.lang_tag (character varying)
+market_place_id_mapping.site (character varying)
+market_place_id_mapping.site_id (integer)
+shopify_collections.sub_source (integer)
+shopify_listing_images.image_url (character varying)
+shopify_listing_meta.description_tag (text)
+shopify_listing_meta.title_tag (character varying)
+shopify_listing_tag.product_type (character varying)
+shopify_listing_tag.sub_source (integer)
+shopify_listing_tag.tag (character varying)
+shopify_listings.channel (character varying)
+shopify_listings.listing_url (text)
+shopify_listings.main_image_url (text)
+shopify_listings.product_type (character varying)
+shopify_listings.site (character varying)
+shopify_listings.sub_source (integer)
+
+=== primary/keyword/search-term columns (whole DB) ===
+amazon_campaigns.keyword_performance_data.ad_keyword_status (character varying)
+amazon_campaigns.keyword_performance_data.keyword_id (bigint)
+amazon_campaigns.keyword_performance_data.keyword_text (character varying)
+amazon_campaigns.keyword_performance_data.source_keyword_id (bigint)
+amazon_campaigns.keywords.keyword_bid (numeric)
+amazon_campaigns.keywords.keyword_id (bigint)
+amazon_campaigns.keywords.keyword_text (character varying)
+amazon_campaigns.search_term_performance_data.keyword (character varying)
+amazon_campaigns.search_term_performance_data.keyword_bid (numeric)
+amazon_campaigns.search_term_performance_data.search_term (character varying)
+amazon_campaigns.search_term_sku_data.search_term_performance_id (integer)
+google_ads.campaign_search_term_data.search_term (text)
+google_ads.campaigns.campaign_primary_status (character varying)
+google_ads.keywords.keyword_text (text)
+google_ads.pmax_campaign_search_term_data.search_term (text)
+listings.amazon_listing_search_engine_keywords.keyword (text)

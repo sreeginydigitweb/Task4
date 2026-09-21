@@ -454,22 +454,36 @@ export const INPUT_DESCRIPTION = Object.freeze({
  * ===========================================================================
  *
  * An INPUT above says HOW a term was arrived at. A RESOURCE says WHERE the
- * word itself came from - which is the thing the page shows. They are not the
- * same question, and the page answers the second one:
+ * word itself came from, or WHICH REAL PLATFORM the product's data is drawn
+ * from - and the resource is what the page shows.
  *
- *   "Brass" was GENERATED, but it came from the PRODUCT NAME.
- *   "Door Pull" was GENERATED, but it came from the PRODUCT TYPE entry.
+ * ===========================================================================
+ * THE PRIMARY KEYWORD IS DIFFERENT
+ * ===========================================================================
  *
- * So the page never labels a keyword "generated". "Generated" is a method, not
- * a resource, and naming the method tells the reader nothing about where to go
- * and check the word.
+ * The task this file serves is precise about one thing: the TAG UNDER THE
+ * PRIMARY KEYWORD must name THE REAL DATA SOURCE / RESOURCE / PLATFORM the
+ * Primary Keyword data came from - "Bulb Holder [Polycrome]" - and NOT how the
+ * keyword was generated. "GEN", "Product Name", "Product Type", "Generated"
+ * and "Terminology" are explicitly NOT acceptable tags.
  *
- * There are exactly four resources, and each is a real, inspectable place:
+ * So the Primary category does NOT use the internal resources below. It uses a
+ * PLATFORM resource instead (see PLATFORM_RESOURCE): the real marketplace or
+ * storefront ledsone records this product against, resolved by SKU from the
+ * listing tables in `listings`. That label is read from the database, never
+ * generated, and is attached ONLY to the Primary keyword. Secondary, Long-Tail
+ * and Competitor keywords keep their existing resources and behaviour
+ * unchanged.
+ *
+ * ---------------------------------------------------------------------------
+ * THE INTERNAL RESOURCES - still used by Secondary/Long-Tail/Competitor
+ * ---------------------------------------------------------------------------
+ *
+ * Each is a real, inspectable place:
  *
  *   PRODUCT_TYPE   the matched PRODUCT_TYPES entry in this file. The word is
  *                  written in the map; the Product Name only SELECTS which
- *                  entry applies. Covers primary, secondary synonyms,
- *                  competitor wording and the fallback long-tail.
+ *                  entry applies.
  *
  *   PRODUCT_NAME   inventory.products.title. The word is literally in the
  *                  product's own name and was read out of it.
@@ -477,19 +491,9 @@ export const INPUT_DESCRIPTION = Object.freeze({
  *   PRODUCT_NAME_AND_TYPE
  *                  both, in one phrase: Product Name words qualifying the
  *                  Product Type term, e.g. "Vintage Brass" + "Door Handle".
- *                  Naming only one of the two would be wrong.
  *
  *   DATABASE       a keyword value recorded in ledsone and passed in through
- *                  the `recorded` seam. When one exists it WINS - see
- *                  resolveKeywordCategories - so the displayed word came from
- *                  the database, whatever the generator would also have said.
- *
- * NOT a resource, deliberately: Amazon, eBay, Google and Search Console.
- * ledsone does hold real keyword data for those platforms, but this
- * application does not read it, so no keyword on this page came from them.
- * Labelling one "Amazon" because Amazon happens to hold the same word would be
- * inventing a provenance the code cannot support. When such a source is wired
- * into the `recorded` seam, it gets its own resource here and its own pill.
+ *                  the `recorded` seam.
  */
 export const RESOURCE = Object.freeze({
   PRODUCT_TYPE: 'product-type',
@@ -498,12 +502,55 @@ export const RESOURCE = Object.freeze({
   DATABASE: 'database',
 });
 
+/**
+ * THE REAL PLATFORM / WEBSITE / RESOURCE a Primary Keyword is attributed to.
+ *
+ * These are not a generation method: each is an actual marketplace or
+ * storefront that ledsone records the product against, in the `listings`
+ * schema, joined by SKU (the joining rule this project already uses for the
+ * Category and the Tags). `source.js` resolves them from real rows; nothing
+ * here is guessed and nothing is keyed on a product id.
+ *
+ * `PLATFORM_RESOURCE` is the fallback vocabulary used when a listing table's
+ * own `site`/`channel` text is not suitable to show directly.
+ */
+export const PLATFORM_RESOURCE = Object.freeze({
+  AMAZON: 'amazon',
+  EBAY: 'ebay',
+  SHOPIFY: 'shopify',
+  BANDQ: 'bandq',
+});
+
+/** The pill text for a platform resource: the platform's own name. */
+export const PLATFORM_LABEL = Object.freeze({
+  [PLATFORM_RESOURCE.AMAZON]: 'Amazon',
+  [PLATFORM_RESOURCE.EBAY]: 'eBay',
+  [PLATFORM_RESOURCE.SHOPIFY]: 'Shopify',
+  [PLATFORM_RESOURCE.BANDQ]: 'B&Q',
+});
+
+/** The platform pill's tooltip: the real table the resource was read from. */
+export const PLATFORM_DESCRIPTION = Object.freeze({
+  [PLATFORM_RESOURCE.AMAZON]:
+    "Recorded against this product's SKU in listings.amazon_listings",
+  [PLATFORM_RESOURCE.EBAY]:
+    "Recorded against this product's SKU in listings.ebay_listings",
+  [PLATFORM_RESOURCE.SHOPIFY]:
+    "Recorded against this product's SKU in listings.shopify_listings",
+  [PLATFORM_RESOURCE.BANDQ]:
+    "Recorded against this product's SKU in listings.bandq_listings",
+});
+
 /** The pill text. The resource's name - never a method, never "GEN". */
 export const RESOURCE_LABEL = Object.freeze({
   [RESOURCE.PRODUCT_TYPE]: 'Product Type',
   [RESOURCE.PRODUCT_NAME]: 'Product Name',
   [RESOURCE.PRODUCT_NAME_AND_TYPE]: 'Product Name + Type',
   [RESOURCE.DATABASE]: 'Database',
+  [PLATFORM_RESOURCE.AMAZON]: PLATFORM_LABEL[PLATFORM_RESOURCE.AMAZON],
+  [PLATFORM_RESOURCE.EBAY]: PLATFORM_LABEL[PLATFORM_RESOURCE.EBAY],
+  [PLATFORM_RESOURCE.SHOPIFY]: PLATFORM_LABEL[PLATFORM_RESOURCE.SHOPIFY],
+  [PLATFORM_RESOURCE.BANDQ]: PLATFORM_LABEL[PLATFORM_RESOURCE.BANDQ],
 });
 
 /** The pill's tooltip: where to go and check the word. */
@@ -514,6 +561,10 @@ export const RESOURCE_DESCRIPTION = Object.freeze({
   [RESOURCE.PRODUCT_NAME_AND_TYPE]:
     'Product Name words qualifying the Product Type term',
   [RESOURCE.DATABASE]: 'Recorded as a keyword value in the ledsone database',
+  [PLATFORM_RESOURCE.AMAZON]: PLATFORM_DESCRIPTION[PLATFORM_RESOURCE.AMAZON],
+  [PLATFORM_RESOURCE.EBAY]: PLATFORM_DESCRIPTION[PLATFORM_RESOURCE.EBAY],
+  [PLATFORM_RESOURCE.SHOPIFY]: PLATFORM_DESCRIPTION[PLATFORM_RESOURCE.SHOPIFY],
+  [PLATFORM_RESOURCE.BANDQ]: PLATFORM_DESCRIPTION[PLATFORM_RESOURCE.BANDQ],
 });
 
 /**
@@ -684,14 +735,32 @@ function splitTerms(value) {
  * 'product-name-type'. 'database' is computed and appears as soon as a
  * recorded value is passed in through `recorded`.
  *
+ * THE PRIMARY CATEGORY IS RESOLVED DIFFERENTLY. Its tag must name the real
+ * data source / resource / platform the Primary Keyword came from - never the
+ * generation method. `primaryResource` is that real platform (see
+ * PLATFORM_RESOURCE), already proven by `source.js` from a listing row joined
+ * on SKU. When it is supplied, EVERY primary term is attributed to it; when it
+ * is not, the primary keyword shows no tag at all rather than a guessed one.
+ * The other three categories ignore `primaryResource` entirely and keep the
+ * resources and behaviour they already had.
+ *
  * @param {unknown} title
  * @param {Partial<{primary: string|null, secondary: string|null, longTail: string|null, competitor: string|null}>} [recorded]
+ * @param {string|null} [primaryResource]  A proven PLATFORM_RESOURCE for the
+ *   Primary keyword, or null when no real source is evidenced.
  * @returns {{primary: Array<{term: string, resource: string|null, input: string|null}>, secondary: Array<{term: string, resource: string|null, input: string|null}>, longTail: Array<{term: string, resource: string|null, input: string|null}>, competitor: Array<{term: string, resource: string|null, input: string|null}>}}
  */
-export function keywordTermSources(title, recorded = {}) {
+export function keywordTermSources(title, recorded = {}, primaryResource = null) {
   const generated = generateKeywordTerms(title);
   const resolved = resolveKeywordCategories(title, recorded);
   const result = {};
+
+  // A proven real platform, if one was supplied. Only the Primary keyword uses
+  // it; the other three categories keep their existing resources.
+  const provenPlatform =
+    typeof primaryResource === 'string' && PLATFORM_LABEL[primaryResource] !== undefined
+      ? primaryResource
+      : null;
 
   for (const name of CATEGORY_NAMES) {
     const candidate = recorded?.[name];
@@ -722,6 +791,17 @@ export function keywordTermSources(title, recorded = {}) {
       if (inDatabase) {
         return described(INPUT.DATABASE);
       }
+
+      // THE PRIMARY KEYWORD'S TAG NAMES THE REAL PLATFORM the data came from,
+      // not the method that produced the wording. A proven platform wins here
+      // even though the wording itself was generated: the reader is told where
+      // the product's data lives, which is the question the tag answers. When
+      // no platform is proven, the primary keyword gets no tag at all - never
+      // "GEN", never "Product Type".
+      if (name === 'primary') {
+        return { term, input: generatedBy ?? null, resource: provenPlatform };
+      }
+
       if (generatedBy !== undefined) {
         return described(generatedBy);
       }

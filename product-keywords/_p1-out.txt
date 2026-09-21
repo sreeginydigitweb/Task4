@@ -1,0 +1,259 @@
+﻿
+=== product 1 ===
+{"id":"1","sku":"HLBP128BB","title":"12.8cm Brass Pull and Push Door Handle, Solid Antique Vintage Style Body, Replacement Door Handle for Kitchen Cabinet Cupboard Drawer Furniture Cupboard Dresser Wardrobe."}
+
+=== amz sek product_id range ===
+{"lo":451226,"hi":1023036,"n":"190052"}
+
+=== amazon_listings.id range ===
+{"lo":"451226","hi":"1022930","n":"134859"}
+
+=== inventory.products.id range ===
+{"lo":"1","hi":"44660","n":"44651"}
+
+=== amazon_listings for sku ===
+[{"id":"994083","asin":"B0GZH6NKYK","sku":"HLBP128BB"}]
+
+=== sek rows for that amazon listing id ===
+[
+  {
+    "id": 279007,
+    "product_id": 994083,
+    "keyword": "black cupboard knobs Black drawer knobs black door knobs Kitchen Cabinet Handle Vintage Black Bird Cage Cupboard Door Drawer Pull Handles kitchen door knobs cupboard knobs cabinet knobs knobs for cupboards & draws black cupboard small round handles",
+    "view_order": 1
+  }
+]
+
+=== search_term_sku_data rows for sku ===
+0
+
+=== search_term_sku_data rows for sku (detail) ===
+[]
+
+=== ebay_listings for sku ===
+[
+  {
+    "id": "415485",
+    "item_id": "123854805172",
+    "parent_sku": "Door handles",
+    "sku": "HLBP128BB",
+    "price": "3.99",
+    "currency": "GBP",
+    "title": null,
+    "product_description": null,
+    "quantity": 13,
+    "quantity_sold": 4,
+    "main_image_url": "https://i.ebayimg.com/00/s/MTAwMFgxMDAw/z/KbAAAOSwCTddPtao/$_57.JPG?set_id=8800005007",
+    "category_id": "180964",
+    "shop_cate_id": "29344992016",
+    "product_type": null,
+    "site": "UK",
+    "listing_url": "https://www.ebay.co.uk/itm/Traditional-Vintage-Door-Pattern-Handles-Kitchen-Cupboard-Wardrobe-Drawer-Knobs-/123854805172",
+    "status": null,
+    "selected_variations": [
+      {
+        "Name": "Handle Style",
+        "Value": "Type 4 128mm"
+      }
+    ],
+    "is_parent": 0,
+    "is_child": 1,
+    "all_list": 1,
+    "img_type": "EPS",
+    "image_change_variation": "Handle Style",
+    "sub_source": 21,
+    "listing_max_platform_stock": 13,
+    "alternative_warehouse": null,
+    "end_date": null,
+    "is_ended": 0,
+    "wrong_sku": 0,
+    "created_at": "2024-06-20T06:12:33.000Z",
+    "updated_at": "2026-09-17T21:30:54.000Z"
+  }
+]
+
+=== tables with "product" in name ===
+google_ads.ad_group_products
+google_ads.asset_group_product_group_performance
+google_ads.merchant_products
+google_ads.product_performance
+inventory.end_of_line_products
+inventory.physical_product_stock
+inventory.product_history
+inventory.product_images
+inventory.product_mapping
+inventory.product_media
+inventory.product_pk
+inventory.products
+listings.shopify_collection_products
+public.product
+staff.ph_category_products
+suppliers.child_item_products
+
+=== suppliers schema columns ===
+child_item_products.id
+child_item_products.parent_item_id
+child_item_products.child_item_id
+child_item_products.sku
+child_item_products.pcs
+child_item_products.ctn_pcs
+child_item_products.ctns
+child_item_products.length
+child_item_products.width
+child_item_products.height
+child_item_products.weight
+child_item_products.cbm
+child_item_products.total_cbm
+child_item_products.created_at
+child_item_products.updated_at
+containers.id
+containers.main_container
+containers.name
+containers.current_cbm
+containers.status
+containers.created_at
+containers.updated_at
+final_containers.id
+final_containers.main_container
+final_containers.name
+final_containers.type
+final_containers.current_cbm
+final_containers.status
+final_containers.created_at
+final_containers.updated_at
+hs_code.id
+hs_code.hs_code
+hs_code.name
+hs_code_map.id
+hs_code_map.hs_code_id
+hs_code_map.supplier_id
+images.id
+images.product_id
+images.image_url
+incidents.id
+incidents.sku
+incidents.description
+incidents.image_path
+incidents.image_name
+incidents.file_path
+incidents.file_name
+incidents.resolved_at
+incidents.created_at
+incidents.updated_at
+invoice_shipping_cost.id
+invoice_shipping_cost.final_container_id
+invoice_shipping_cost.shipping_cost
+invoices.id
+invoices.final_container_id
+invoices.hs_code_name
+invoices.units
+invoices.unit_price
+invoices.fob
+invoices.invoice_date
+invoices.ship_by_date
+invoices.created
+old_supplier.id
+old_supplier.supplier
+old_supplyorder.id
+old_supplyorder.supplyorderid
+old_supplyorder.date
+old_supplyorder.estimatedate
+old_supplyorder.status
+old_supplyorder.containerid
+old_supplyorder.supplier
+old_supplyorderlist.id
+old_supplyorderlist.supplyorderid
+old_supplyorderlist.sku
+old_supplyorderlist.quantity
+old_supplyorderlist.originalquantity
+old_supplyorderlist.remarks
+old_supplyorderlist.notes
+order_item_logs.id
+order_item_logs.order_id
+order_item_logs.order_item_id
+order_item_logs.change_key
+order_item_logs.old_value
+order_item_logs.new_value
+order_item_logs.change_by
+order_item_logs.created_at
+order_items.id
+order_items.order_id
+order_items.sku
+order_items.english_description
+order_items.chinese_description
+order_items.color_english
+order_items.color_chinese
+order_items.remarks
+order_items.note
+order_items.image_url
+order_items.webp_url
+order_items.pcs
+order_items.ctn_pcs
+order_items.ctns
+order_items.length
+order_items.width
+order_items.height
+order_items.weight
+order_items.cbm
+order_items.total_cbm
+order_items.assigned_container_id
+order_items.final_container_id
+order_items.loading_order
+order_items.not_completed
+order_items.image_up
+order_items.created_at
+order_items.updated_at
+order_items_child.id
+order_items_child.parent_item_id
+order_items_child.pcs
+order_items_child.ctn_pcs
+order_items_child.ctns
+order_items_child.length
+order_items_child.width
+order_items_child.height
+order_items_child.weight
+order_items_child.cbm
+order_items_child.total_cbm
+order_items_child.created_at
+order_items_child.updated_at
+orders.id
+orders.supplier_id
+orders.order_id
+orders.order_date
+orders.cbm
+orders.status_confirmed
+orders.confirmed_date
+orders.status_finished_production
+orders.finished_date
+orders.status_shipped
+orders.status_arrived
+orders.container_id
+orders.final_container_id
+orders.image_url
+orders.loading_order
+orders.loading_order_new
+orders.expected_completion_date
+orders.created_at
+orders.updated_at
+supplier_documents.id
+supplier_documents.supplier_id
+supplier_documents.document_type
+supplier_documents.marketplace
+supplier_documents.file_name
+supplier_documents.file_url
+supplier_documents.temp_url
+supplier_documents.file_size
+supplier_documents.mime_type
+supplier_documents.description
+supplier_documents.created_at
+supplier_documents.updated_at
+suppliers.id
+suppliers.name
+suppliers.name_zh
+suppliers.code
+suppliers.gpsr_link
+suppliers.instruction_manual_link
+suppliers.password_changed
+suppliers.password_set_at
+suppliers.created_at
+suppliers.updated_at
