@@ -137,6 +137,14 @@ export const INVENTORY_SCHEMA = schemaName('DB_INVENTORY_SCHEMA', 'inventory');
 export const LISTINGS_SCHEMA = schemaName('DB_LISTINGS_SCHEMA', 'listings');
 
 /**
+ * Is this running as a serverless function rather than as a long-lived server?
+ *
+ * Vercel sets VERCEL=1 in every function environment. The difference matters
+ * for the pool and for nothing else: see poolConfig below.
+ */
+const SERVERLESS = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+
+/**
  * Build the pool configuration, complaining clearly about anything missing.
  *
  * @returns {object}
@@ -179,10 +187,28 @@ function poolConfig() {
     // including itself at startup. Two is the smallest that still lets a
     // page's reads overlap; the rest queue on the pool rather than opening
     // more.
-    max: Number(setting('DB_POOL_MAX') || 2),
-    idleTimeoutMillis: 30_000,
+    //
+    // ONE, not two, when this is a serverless function. The reasoning above
+    // assumes ONE process holding ONE pool. A serverless platform runs many
+    // instances at once, each with a pool of its own, so the real number of
+    // connections is the pool size times however many instances happen to be
+    // warm - a number this application does not control and cannot see. At two
+    // apiece that multiplies twice as fast into the shared role limit, and
+    // exhausting it does not just break this page: it locks the other
+    // applications on that role out of the database too. One connection per
+    // instance is the smallest possible share of a limit that is not ours
+    // alone. DB_POOL_MAX still overrides, for a deployment behind a pooler.
+    max: Number(setting('DB_POOL_MAX') || (SERVERLESS ? 1 : 2)),
+    // A frozen function instance holds its sockets but cannot use them, so an
+    // idle connection is worth less there and costs the same. Released sooner.
+    idleTimeoutMillis: SERVERLESS ? 10_000 : 30_000,
+    // Let the process end without waiting on an idle client. Harmless for a
+    // server that never exits; it is what lets a function finish cleanly.
+    allowExitOnIdle: SERVERLESS,
     connectionTimeoutMillis: 15_000,
-    application_name: 'task4-product-keywords (read-only)',
+    application_name: SERVERLESS
+      ? 'task4-product-keywords (read-only, vercel)'
+      : 'task4-product-keywords (read-only)',
   };
 }
 

@@ -29,6 +29,23 @@ const SOURCE_FILES = readdirSync(HERE)
   .sort();
 
 /**
+ * The Vercel entry point, which sits OUTSIDE this directory.
+ *
+ * Every sweep below runs over the application's modules, and api/index.js is
+ * one of them: it is a second way into the same code, so a write statement or
+ * a reach into the second database would count there exactly as it would in
+ * server.js. Being in another folder is not a reason to trust it less or scan
+ * it less.
+ */
+const VERCEL_ENTRY = join(HERE, '..', 'api', 'index.js');
+
+/** Every application module, wherever it lives, as {name, code}. */
+const EVERY_MODULE = [
+  ...SOURCE_FILES.map((name) => ({ name, path: join(HERE, name) })),
+  { name: 'api/index.js', path: VERCEL_ENTRY },
+];
+
+/**
  * Remove block and line comments, and the contents of template/quoted strings
  * are left alone - it is the executable SQL we care about.
  *
@@ -59,8 +76,8 @@ test('the application ships at least the five modules it is supposed to have', (
 });
 
 test('no module contains a statement that could write to the database', () => {
-  for (const name of SOURCE_FILES) {
-    const code = stripComments(readFileSync(join(HERE, name), 'utf8'));
+  for (const { name, path: file } of EVERY_MODULE) {
+    const code = stripComments(readFileSync(file, 'utf8'));
 
     for (const pattern of WRITE_STATEMENTS) {
       assert.ok(!pattern.test(code), `${name} contains a write statement matching ${pattern}`);
@@ -83,8 +100,8 @@ test('startup refuses to continue if the role can write to the source', () => {
 test('no module reaches into the second database', () => {
   // order_management_copy holds listing_generator, where the classified
   // keyword and competitor tables live. This version must not read it.
-  for (const name of SOURCE_FILES) {
-    const code = stripComments(readFileSync(join(HERE, name), 'utf8'));
+  for (const { name, path: file } of EVERY_MODULE) {
+    const code = stripComments(readFileSync(file, 'utf8'));
 
     assert.ok(!/order_management_copy/i.test(code), `${name} references order_management_copy`);
     assert.ok(!/listing_generator/i.test(code), `${name} references listing_generator`);
@@ -110,17 +127,33 @@ test('the paged query passes its limit and offset as parameters', () => {
   assert.match(code, /\[limit, offset\]/);
 });
 
-test('the server serves no JavaScript and allows none', () => {
-  const code = readFileSync(join(HERE, 'server.js'), 'utf8');
+test('the application serves no JavaScript and allows none', () => {
+  const code = readFileSync(join(HERE, 'http-headers.js'), 'utf8');
 
   assert.match(code, /default-src 'none'/);
   assert.ok(!/script-src 'self'/.test(code), 'this application serves no script');
 });
 
+test('both ways in send the same headers, from the one definition', () => {
+  // There are two entry points now. A second copy of the policy would be a
+  // copy that could drift - the deployed page quietly served without a CSP
+  // while the local one kept it - so neither is allowed to define its own.
+  for (const [name, file] of [
+    ['server.js', join(HERE, 'server.js')],
+    ['api/index.js', VERCEL_ENTRY],
+  ]) {
+    const code = readFileSync(file, 'utf8');
+
+    assert.match(code, /import { SECURITY_HEADERS } from '[^']*http-headers.js'/, `${name} imports the headers`);
+    assert.ok(!/const SECURITY_HEADERS = /.test(code), `${name} must not define its own`);
+    assert.match(code, /\.\.\.SECURITY_HEADERS/, `${name} actually sends them`);
+  }
+});
+
 test('images are allowed only from the named product-image hosts', () => {
   // Comments stripped: the prose above the header legitimately discusses what
   // img-src must not become.
-  const code = stripComments(readFileSync(join(HERE, 'server.js'), 'utf8'));
+  const code = stripComments(readFileSync(join(HERE, 'http-headers.js'), 'utf8'));
 
   // The Product Image column needs img-src, but it must stay an allowlist:
   // a wildcard would let any URL in a database row make the page fetch from
