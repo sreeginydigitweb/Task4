@@ -10,7 +10,9 @@
   "scripts": {
     "start": "node product-keywords/server.js",
     "test": "node --test --test-concurrency=1 \"product-keywords/**/*.test.js\"",
-    "snapshot": "node product-keywords/snapshot.js"
+    "snapshot": "node product-keywords/snapshot.js",
+    "build": "node product-keywords/build-standalone.js",
+    "build:standalone": "node product-keywords/build-standalone.js"
   },
   "dependencies": {
     "pg": "^8.23.0"

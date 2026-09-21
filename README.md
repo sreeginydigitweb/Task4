@@ -102,7 +102,47 @@ Every setting is documented in it.
 npm test     # 247 tests, no database required
 ```
 
-## The shareable single file
+## The standalone file - `index.html`
+
+`npm run build` reads the **whole catalogue** from ledsone and writes
+**`index.html`** in the project root. That file is the finished project: open
+it by double-clicking, or at
+`file:///C:/Users/LED%20309/OneDrive/Documents/Task%204/index.html`.
+
+```bash
+npm run build                        # every product -> index.html
+npm run build -- --limit 2000        # fewer, for a quick check
+npm run build -- --out elsewhere.html
+```
+
+Nothing needs to be running. No server, no `npm start`, no localhost, no
+database, no network. The search, the category filter, Apply, Clear Filters and
+the paging all run on data already inside the file.
+
+**The database is used at build time only.** Node reads ledsone over the same
+read-only connection the live app uses, and only the *result* is written out.
+The file holds no host, port, user, password, connection string or SQL, and a
+test fails if any of those ever appear in it. A browser could not reach
+PostgreSQL in any case.
+
+### Why it is not simply a bigger snapshot
+
+At about 44,600 products, the shape of the data *is* the file size. Written the
+way `snapshot.js` writes its 500 rows - one JSON object per product, every key
+spelled out - the same catalogue comes to roughly 83MB, which is not a file
+anybody opens twice.
+
+So the rows are **interned**: each distinct product name, keyword, resource
+name, evidence record, category and image host is stored once and referred to
+by number. The catalogue repeats itself enormously - 37,786 products share one
+placeholder name, and one Amazon keyword record proves the same word for every
+variant behind a listing - so this costs nothing and saves most of the file.
+Nothing is dropped, sampled or summarised; only the shape changes.
+
+Both builders read through the same `source.js`, classify with the same
+`keyword-generator.js` and prove resources with the same `provenance.js`.
+
+## The 500-product snapshot
 
 `npm run snapshot` builds **one self-contained HTML file** at
 `share/product-keywords-snapshot.html`. Open it by double-clicking; nothing
