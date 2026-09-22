@@ -33,6 +33,10 @@ const product = (over = {}) => ({
   image: 'https://sin1.contabostorage.com/bucket/img/1.jpg',
   category: 'Door Handle',
   evidence: [],
+  // Where ledsone records this product as listed - see listing-facets.js.
+  // Both are lists, because a product is normally listed several times over.
+  marketplaces: ['UK', 'Germany'],
+  platforms: ['EBAY', 'AMAZON'],
   ...over,
 });
 
@@ -154,6 +158,67 @@ test('keyword counts are the real totals, per column', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Marketplace and Platform: ledsone's own record of where a product is listed.
+// ---------------------------------------------------------------------------
+
+test('a product keeps EVERY marketplace and platform it is listed on', () => {
+  const { data } = dataset([product({ marketplaces: ['UK', 'Germany', 'France'], platforms: ['EBAY', 'SHOPIFY'] })]);
+  const row = data.rows[0];
+
+  assert.deepEqual(row[9].map((at) => data.marketplaces[at]), ['UK', 'Germany', 'France'], 'all three kept');
+  assert.deepEqual(row[10].map((at) => data.platforms[at]), ['EBAY', 'SHOPIFY'], 'both kept');
+});
+
+test('a product listed nowhere gets two empty lists, never an invented value', () => {
+  for (const missing of [[], null, undefined]) {
+    const { data } = dataset([product({ marketplaces: missing, platforms: missing })]);
+
+    assert.deepEqual(data.rows[0][9], [], String(missing));
+    assert.deepEqual(data.rows[0][10], [], String(missing));
+    assert.deepEqual(data.marketplaceOrder, [], 'and it counts towards no marketplace');
+    assert.deepEqual(data.platformOrder, [], 'and towards no platform');
+  }
+});
+
+test('marketplaces and platforms are counted per PRODUCT and ordered busiest first', () => {
+  const { data } = dataset([
+    product({ id: 1, sku: 'A', marketplaces: ['UK', 'UK', 'Germany'], platforms: ['EBAY'] }),
+    product({ id: 2, sku: 'B', marketplaces: ['UK'], platforms: ['EBAY', 'AMAZON'] }),
+    product({ id: 3, sku: 'C', marketplaces: ['UK', 'France'], platforms: ['AMAZON'] }),
+  ]);
+
+  assert.deepEqual(
+    data.marketplaceOrder.map(([at, count]) => [data.marketplaces[at], count]),
+    [['UK', 3], ['France', 1], ['Germany', 1]],
+    'listed twice in the UK is still one UK product',
+  );
+  assert.deepEqual(
+    data.platformOrder.map(([at, count]) => [data.platforms[at], count]),
+    [['AMAZON', 2], ['EBAY', 2]],
+  );
+});
+
+test('a repeated marketplace name is stored once and referred to by number', () => {
+  const many = Array.from({ length: 40 }, (_, at) =>
+    product({ id: at + 1, sku: `S${at}`, marketplaces: ['UK'], platforms: ['EBAY'] }));
+  const { data } = dataset(many);
+
+  assert.deepEqual(data.marketplaces, ['UK']);
+  assert.deepEqual(data.platforms, ['EBAY']);
+  assert.ok(data.rows.every((row) => row[9][0] === 0 && row[10][0] === 0));
+});
+
+test('the keyword columns keep their positions when the facets are added', () => {
+  // The two lists sit at the END of the row for exactly this reason.
+  const { data } = dataset([product({ evidence: [record('brass door handle')] })]);
+  const row = data.rows[0];
+
+  assert.equal(row[4], data.categories.indexOf('Door Handle'), 'category is still position 4');
+  for (const at of [5, 6, 7, 8]) assert.ok(Array.isArray(row[at]), `keyword column at ${at}`);
+  assert.ok(row[5].length > 0, 'and the primary keyword is still there');
+});
+
+// ---------------------------------------------------------------------------
 // The generated document.
 // ---------------------------------------------------------------------------
 
@@ -176,11 +241,35 @@ test('the document has exactly the nine required columns, in order', () => {
 test('the document carries the filter controls the UI needs', () => {
   const document = html();
 
-  for (const id of ['search', 'category', 'apply', 'clear-filter',
+  for (const id of ['search', 'category', 'marketplace', 'platform', 'clear-filter',
     'prev-top', 'next-top', 'position-top', 'count-top',
     'prev-bottom', 'next-bottom', 'position-bottom', 'count-bottom', 'rows', 'empty']) {
     assert.ok(document.includes(`id="${id}"`), `${id} is present`);
   }
+});
+
+test('there is no Apply button - each control applies itself', () => {
+  const document = html();
+
+  assert.ok(!document.includes('id="apply"'), 'no Apply button');
+  assert.doesNotMatch(document, />\s*Apply\s*</, 'and nothing labelled Apply');
+
+  // Clear Filters is the only button left in the filter card.
+  const card = /<div class="filter">[\s\S]*?<\/div>\s*<\/div>/.exec(document)[0];
+  const buttons = [...card.matchAll(/<button[^>]*id="([a-z-]+)"/g)].map((m) => m[1]);
+  assert.deepEqual(buttons, ['clear-filter']);
+
+  // The script must not reach for it either.
+  assert.doesNotMatch(document, /el\('apply'\)/);
+});
+
+test('the search box applies on Enter, and the dropdowns on change', () => {
+  const script = /<script>\n([\s\S]*?)<\/script>/.exec(html())[1];
+
+  assert.match(script, /el\('search'\)\.addEventListener\('keydown'/, 'Enter applies the search');
+  assert.match(script, /event\.key === 'Enter'/);
+  assert.match(script, /el\(FILTERS\[f\]\)\.addEventListener\('change'/, 'each dropdown applies on change');
+  assert.match(script, /var FILTERS = \['category', 'marketplace', 'platform'\]/);
 });
 
 test('nothing is loaded from outside the file', () => {
@@ -235,7 +324,10 @@ test('the embedded block is data, and parses', () => {
   assert.equal(data.rows.length, 2);
   assert.deepEqual(
     Object.keys(data).sort(),
-    ['categories', 'categoryOrder', 'details', 'prefixes', 'resources', 'rows', 'terms', 'titles'],
+    [
+      'categories', 'categoryOrder', 'details', 'marketplaceOrder', 'marketplaces',
+      'platformOrder', 'platforms', 'prefixes', 'resources', 'rows', 'terms', 'titles',
+    ],
   );
 });
 
@@ -249,6 +341,46 @@ test('a generation method is never written as a resource name', () => {
       `"${label}" is a method, not a resource`,
     );
   }
+});
+
+test('the document carries a Marketplace and a Platform dropdown, beside Categories', () => {
+  const document = html([
+    product({ id: 1, sku: 'A', marketplaces: ['UK'], platforms: ['EBAY'] }),
+    product({ id: 2, sku: 'B', marketplaces: ['Germany'], platforms: ['AMAZON'] }),
+  ]);
+
+  assert.match(document, /<label for="marketplace">Marketplace<\/label>/);
+  assert.match(document, /<label for="platform">Platform<\/label>/);
+
+  // Beside Categories, and in the required order.
+  const order = ['id="category"', 'id="marketplace"', 'id="platform"'].map((id) => document.indexOf(id));
+  assert.ok(order.every((at) => at > -1) && order[0] < order[1] && order[1] < order[2], 'Search, Categories, Marketplace, Platform');
+  assert.ok(document.indexOf('id="search"') < order[0], 'Search comes first');
+  assert.ok(order[2] < document.indexOf('id="clear-filter"'), 'Clear Filters comes last');
+});
+
+test('the dropdowns list the real values with their counts, and an All option', () => {
+  const document = html([
+    product({ id: 1, sku: 'A', marketplaces: ['UK'], platforms: ['EBAY'] }),
+    product({ id: 2, sku: 'B', marketplaces: ['UK', 'Germany'], platforms: ['AMAZON'] }),
+  ]);
+
+  const list = (id) => /<select id="([a-z]+)">([\s\S]*?)<\/select>/g;
+  const selects = Object.fromEntries([...document.matchAll(list())].map((m) => [m[1], m[2]]));
+
+  assert.match(selects.marketplace, /<option value="" selected>All Marketplaces \(2\)<\/option>/);
+  assert.match(selects.marketplace, />UK \(2\)</);
+  assert.match(selects.marketplace, />Germany \(1\)</);
+  assert.match(selects.platform, /<option value="" selected>All Platforms \(2\)<\/option>/);
+  assert.match(selects.platform, />EBAY \(1\)</);
+  assert.match(selects.platform, />AMAZON \(1\)</);
+});
+
+test('adding the two filters adds no table column', () => {
+  const headings = [...html().matchAll(/<th>(.*?)<\/th>/g)].map((m) => m[1]);
+
+  assert.equal(headings.length, 9);
+  assert.ok(!headings.some((h) => /marketplace|platform/i.test(h)), 'neither is a column');
 });
 
 // ---------------------------------------------------------------------------
@@ -286,6 +418,49 @@ test('every resource in the built file is a real place, never a method', { skip:
   for (const [slug, label] of builtData.resources) {
     assert.ok(!banned.includes(label), `"${label}" is a method, not a resource`);
     assert.ok(slug && label, 'every resource has both a colour and a name');
+  }
+});
+
+test('the built index.html carries no Apply button', { skip: !built }, () => {
+  assert.ok(!built.includes('id="apply"'), 'no Apply button in the built file');
+  assert.doesNotMatch(built, /el\('apply'\)/, 'and the script does not reach for one');
+  assert.ok(built.includes('id="clear-filter"'), 'Clear Filters is still there');
+  assert.match(built, /el\('search'\)\.addEventListener\('keydown'/, 'Enter still applies the search');
+});
+
+test('the built index.html carries both new dropdowns, built from the database', { skip: !built }, () => {
+  assert.match(built, /<label for="marketplace">Marketplace<\/label>/);
+  assert.match(built, /<label for="platform">Platform<\/label>/);
+
+  assert.ok(builtData.marketplaces.length > 0, 'the marketplace list is not empty');
+  assert.ok(builtData.platforms.length > 0, 'the platform list is not empty');
+  assert.equal(builtData.marketplaceOrder.length, builtData.marketplaces.length);
+  assert.equal(builtData.platformOrder.length, builtData.platforms.length);
+
+  // Real values, and every one of them actually used by a product.
+  for (const value of [...builtData.marketplaces, ...builtData.platforms]) {
+    assert.equal(typeof value, 'string');
+    assert.notEqual(value.trim(), '');
+  }
+  for (const [, count] of [...builtData.marketplaceOrder, ...builtData.platformOrder]) {
+    assert.ok(count > 0, 'no option names a value no product has');
+  }
+});
+
+test('the built rows carry their marketplaces and platforms, one-to-many', { skip: !built }, () => {
+  assert.ok(builtData.rows.every((row) => Array.isArray(row[9]) && Array.isArray(row[10])), 'every row has both lists');
+
+  const many = builtData.rows.filter((row) => row[9].length > 1);
+  assert.ok(many.length > 0, 'a product in several marketplaces keeps all of them');
+
+  const none = builtData.rows.filter((row) => row[9].length === 0 && row[10].length === 0);
+  assert.ok(none.length > 0, 'and a product listed nowhere keeps neither');
+
+  const marketplaces = builtData.marketplaces.length;
+  const platforms = builtData.platforms.length;
+  for (const row of builtData.rows) {
+    for (const at of row[9]) assert.ok(at >= 0 && at < marketplaces, 'marketplace index is in range');
+    for (const at of row[10]) assert.ok(at >= 0 && at < platforms, 'platform index is in range');
   }
 });
 

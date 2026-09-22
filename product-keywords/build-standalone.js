@@ -47,6 +47,7 @@ import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { checkConnection, closePool } from './db.js';
+import { withListingFacets } from './listing-facets.js';
 import { readLiveStyles, serialiseData } from './snapshot.js';
 import { classifyKeywordTerms, countProducts, findProductKeywordPage } from './source.js';
 
@@ -119,6 +120,49 @@ function stringTable() {
 }
 
 /**
+ * Intern one product's marketplaces (or platforms) and count each one.
+ *
+ * The values are ledsone's own - see listing-facets.js - and are stored
+ * exactly as the database spells them. De-duplicated per product, because a
+ * product listed three times in the UK is still ONE product in the UK count;
+ * anything that is not a non-empty string is dropped rather than turned into
+ * a value of its own.
+ *
+ * @param {unknown} values
+ * @param {ReturnType<typeof stringTable>} table
+ * @param {Map<number, number>} counts  Products per value, accumulated.
+ * @returns {number[]}
+ */
+function facetIndexes(values, table, counts) {
+  if (!Array.isArray(values)) return [];
+
+  const indexes = [];
+
+  for (const value of values) {
+    const at = table.of(typeof value === 'string' ? value.trim() : value);
+    if (at === -1 || indexes.includes(at)) continue;
+
+    indexes.push(at);
+    counts.set(at, (counts.get(at) ?? 0) + 1);
+  }
+
+  return indexes;
+}
+
+/**
+ * A filter's options: busiest first, then alphabetically.
+ *
+ * @param {Map<number, number>} counts
+ * @param {ReturnType<typeof stringTable>} table
+ * @returns {Array<[number, number]>}
+ */
+function busiestFirst(counts, table) {
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1] || table.values[a[0]].localeCompare(table.values[b[0]], 'en'))
+    .map(([index, count]) => [index, count]);
+}
+
+/**
  * Turn the rows read from ledsone into the compact structure the file carries.
  *
  * Nothing is dropped, rounded or summarised. Every product, every keyword and
@@ -126,7 +170,14 @@ function stringTable() {
  *
  * A row becomes:
  *
- *   [ id, sku, titleIndex, image, categoryIndex, primary, secondary, long, competitor ]
+ *   [ id, sku, titleIndex, image, categoryIndex, primary, secondary, long,
+ *     competitor, marketplaceIndexes, platformIndexes ]
+ *
+ * The two trailing lists are where the product is LISTED - see
+ * listing-facets.js. Both are arrays because a product is normally listed in
+ * several marketplaces and on several platforms at once, and both are EMPTY
+ * for a product ledsone holds no listing for. They sit at the END so that
+ * every existing position keeps its meaning.
  *
  * where `image` is [prefixIndex, rest] or null, and each keyword list holds
  * one entry per keyword:
@@ -148,8 +199,16 @@ export function encodeDataset(products) {
   const details = stringTable();
   const categories = stringTable();
   const prefixes = stringTable();
+  // Where the product is listed. Both are short lists - about seventeen
+  // marketplaces and a handful of platforms across the whole catalogue - so
+  // interning them costs almost nothing and keeps every row two arrays of
+  // small numbers rather than repeated text.
+  const marketplaces = stringTable();
+  const platforms = stringTable();
 
   const categoryCounts = new Map();
+  const marketplaceCounts = new Map();
+  const platformCounts = new Map();
   const counts = { products: 0, primary: 0, secondary: 0, longTail: 0, competitor: 0, proven: 0, withImage: 0 };
 
   const rows = products.map((product) => {
@@ -168,6 +227,12 @@ export function encodeDataset(products) {
     if (categoryIndex !== -1) {
       categoryCounts.set(categoryIndex, (categoryCounts.get(categoryIndex) ?? 0) + 1);
     }
+
+    // Every marketplace and every platform ledsone records a listing on for
+    // this product, kept whole. A product with no listing keeps two empty
+    // arrays: it matches neither dropdown and nothing is invented for it.
+    const marketplaceIndexes = facetIndexes(product.marketplaces, marketplaces, marketplaceCounts);
+    const platformIndexes = facetIndexes(product.platforms, platforms, platformCounts);
 
     // The keywords and their resources, from the application's own classifier
     // and the evidence source.js already read. Values are untouched.
@@ -190,14 +255,19 @@ export function encodeDataset(products) {
       });
     });
 
-    return [Number(product.id), String(product.sku ?? ''), titles.of(product.title), image, categoryIndex, ...encoded];
+    return [
+      Number(product.id), String(product.sku ?? ''), titles.of(product.title), image, categoryIndex,
+      ...encoded,
+      marketplaceIndexes, platformIndexes,
+    ];
   });
 
-  // The category filter, busiest first then alphabetically - the order
-  // categories.js already uses, so the list reads the same as the live page.
-  const categoryOrder = [...categoryCounts.entries()]
-    .sort((a, b) => b[1] - a[1] || categories.values[a[0]].localeCompare(categories.values[b[0]], 'en'))
-    .map(([index, count]) => [index, count]);
+  // The three filters, busiest first then alphabetically - the order
+  // categories.js already uses, so the Categories list reads the same as the
+  // live page, and the two new lists read the same way as it.
+  const categoryOrder = busiestFirst(categoryCounts, categories);
+  const marketplaceOrder = busiestFirst(marketplaceCounts, marketplaces);
+  const platformOrder = busiestFirst(platformCounts, platforms);
 
   return {
     data: {
@@ -206,8 +276,12 @@ export function encodeDataset(products) {
       resources: resources.values.map((pair) => JSON.parse(pair)),
       details: details.values,
       categories: categories.values,
+      marketplaces: marketplaces.values,
+      platforms: platforms.values,
       prefixes: prefixes.values,
       categoryOrder,
+      marketplaceOrder,
+      platformOrder,
       rows,
     },
     counts,
@@ -236,6 +310,9 @@ var PAGE_SIZE = ${Number(pageSize)};
 var ROWS = D.rows;
 var TITLES = D.titles, TERMS = D.terms, RESOURCES = D.resources, DETAILS = D.details;
 var CATS = D.categories, PREFIX = D.prefixes;
+/* Where each product is listed. Both are lists per product, so a product in
+   four marketplaces is matched by any of the four. */
+var MARKETS = D.marketplaces, PLATFORMS = D.platforms;
 
 /* Lower-cased SKU, id and name per product, built once so that typing in the
    search box does not lower-case the whole catalogue on every keystroke. */
@@ -246,18 +323,34 @@ for (var i = 0; i < ROWS.length; i++) {
 }
 
 var el = function (id) { return document.getElementById(id); };
-var state = { page: 1, category: -1, search: '', matches: null };
+var state = { page: 1, category: -1, marketplace: -1, platform: -1, search: '', matches: null };
 
 /* ----------------------------------------------------------------------- */
 /* Which products the current filters allow. Indices, not copies of rows.   */
 /* ----------------------------------------------------------------------- */
+/* Does this product's list of marketplaces (or platforms) include the one
+   chosen? -1 is "All", which allows everything including a product that has
+   no listing at all. A missing list matches nothing but All. */
+function listed(list, wanted) {
+  if (wanted === -1) return true;
+  if (!list) return false;
+
+  for (var k = 0; k < list.length; k++) if (list[k] === wanted) return true;
+  return false;
+}
+
 function applyFilters() {
   var needle = state.search.trim().toLowerCase();
   var category = state.category;
+  var marketplace = state.marketplace;
+  var platform = state.platform;
   var out = [];
 
+  /* AND, all four of them: a product has to pass every filter that is set. */
   for (var i = 0; i < ROWS.length; i++) {
     if (category !== -1 && ROWS[i][4] !== category) continue;
+    if (!listed(ROWS[i][9], marketplace)) continue;
+    if (!listed(ROWS[i][10], platform)) continue;
     if (needle !== '' && HAYSTACK[i].indexOf(needle) === -1) continue;
     out.push(i);
   }
@@ -366,7 +459,12 @@ function drawControls(page) {
   var first = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   var last = Math.min(page * PAGE_SIZE, total);
 
-  var where = state.category === -1 ? '' : ' in ' + CATS[state.category];
+  /* What the count line names: every filter that is actually set. */
+  var chosen = [];
+  if (state.category !== -1) chosen.push(CATS[state.category]);
+  if (state.marketplace !== -1) chosen.push(MARKETS[state.marketplace]);
+  if (state.platform !== -1) chosen.push(PLATFORMS[state.platform]);
+  var where = chosen.length === 0 ? '' : ' in ' + chosen.join(' + ');
   var text = total === 0
     ? 'No products match' + (where || ' this search') + '.'
     : 'Showing ' + number(first) + '\\u2013' + number(last) + ' of ' + number(total) + ' products' + where + '.';
@@ -400,25 +498,49 @@ function refilter(page) {
   show(page || 1);
 }
 
-function readControls() {
-  state.search = el('search').value;
-  var chosen = el('category').value;
-  state.category = chosen === '' ? -1 : Number(chosen);
+/* A dropdown's value: '' is All, which is -1 here. */
+function choice(id) {
+  var value = el(id).value;
+  return value === '' ? -1 : Number(value);
 }
 
-el('apply').addEventListener('click', function () { readControls(); refilter(1); });
-el('clear-filter').addEventListener('click', function () {
-  el('search').value = '';
-  el('category').value = '';
-  readControls();
-  refilter(1);
-});
+/* The three dropdowns, in the order they appear on the page. */
+var FILTERS = ['category', 'marketplace', 'platform'];
 
-/* Live filtering as well as Apply, so the page responds either way. */
-el('search').addEventListener('input', function () { readControls(); refilter(1); });
-el('category').addEventListener('change', function () { readControls(); refilter(1); });
+function readControls() {
+  state.search = el('search').value;
+  state.category = choice('category');
+  state.marketplace = choice('marketplace');
+  state.platform = choice('platform');
+}
+
+/* There is NO Apply button. Each control applies itself:
+
+     SEARCH      on Enter
+     DROPDOWNS   the moment the choice changes
+
+   Every one of them goes through refilter(1), which re-reads ALL FOUR
+   controls and returns to PAGE ONE. That is why a filter can never strand the
+   reader on a page number the narrowed list no longer has, and why the
+   filters always combine rather than replace one another. */
+
+/* SEARCH - on Enter. preventDefault stops the browser's own search-input
+   behaviour; the filtering is this line, not a form submission. */
 el('search').addEventListener('keydown', function (event) {
   if (event.key === 'Enter') { event.preventDefault(); readControls(); refilter(1); }
+});
+
+/* CATEGORY, MARKETPLACE, PLATFORM - immediately on change. */
+for (var f = 0; f < FILTERS.length; f++) {
+  el(FILTERS[f]).addEventListener('change', function () { readControls(); refilter(1); });
+}
+
+/* CLEAR FILTERS resets all four controls, and the paging with them. */
+el('clear-filter').addEventListener('click', function () {
+  el('search').value = '';
+  for (var c = 0; c < FILTERS.length; c++) el(FILTERS[c]).value = '';
+  readControls();
+  refilter(1);
 });
 
 var steps = ['top', 'bottom'];
@@ -450,13 +572,21 @@ refilter(1);
 export function buildStandaloneHtml({ data, counts, styles, pageSize = PAGE_SIZE }) {
   const headers = COLUMNS.map((name) => `            <th>${escapeHtml(name)}</th>`).join('\n');
 
-  const options = [
-    `<option value="" selected>All Categories (${counts.products.toLocaleString('en-GB')})</option>`,
-    ...data.categoryOrder.map(
-      ([index, count]) =>
-        `<option value="${index}">${escapeHtml(data.categories[index])} (${count.toLocaleString('en-GB')})</option>`,
-    ),
-  ].join('');
+  // One dropdown's options: "All ..." first, then the values busiest first.
+  // Nothing here names a category, a marketplace or a platform - every option
+  // is whatever the database actually returned at build time.
+  const optionsFor = (order, values, all) =>
+    [
+      `<option value="" selected>${escapeHtml(all)} (${counts.products.toLocaleString('en-GB')})</option>`,
+      ...order.map(
+        ([index, count]) =>
+          `<option value="${index}">${escapeHtml(values[index])} (${count.toLocaleString('en-GB')})</option>`,
+      ),
+    ].join('');
+
+  const categoryOptions = optionsFor(data.categoryOrder, data.categories, 'All Categories');
+  const marketplaceOptions = optionsFor(data.marketplaceOrder, data.marketplaces, 'All Marketplaces');
+  const platformOptions = optionsFor(data.platformOrder, data.platforms, 'All Platforms');
 
   const controls = (place) => `    <div class="controls controls-${place}">
       <p class="count" id="count-${place}"></p>
@@ -487,7 +617,18 @@ export function buildStandaloneHtml({ data, counts, styles, pageSize = PAGE_SIZE
   SQL. The database was read by the build, in Node; what landed here is the
   result. A browser could not reach PostgreSQL in any case.
 
-  The search, the category filter and the paging all run on the data below.
+  The search, the Categories / Marketplace / Platform filters and the paging
+  all run on the data below. The three dropdowns and the search box narrow
+  together - a product has to pass all four - and Clear Filters puts every one
+  of them back.
+
+  There is no Apply button. Press Enter in the search box, or change any of
+  the three dropdowns, and the table is redrawn from page one.
+
+  Marketplace and Platform are ledsone's OWN records of where each product is
+  listed: the marketplace is the listing's site and the platform is the selling
+  platform that listing's account belongs to. A product the business has not
+  listed anywhere carries neither, and is shown only under "All".
 
   Nine columns: Product Image, SKU, Product ID, Product Name, Category, and
   the four keyword columns. A keyword's RESOURCE pill sits underneath the
@@ -521,10 +662,17 @@ button.btn:disabled { color: var(--muted); opacity: .55; cursor: default; border
       </div>
       <div class="field">
         <label for="category">Categories</label>
-        <select id="category">${options}</select>
+        <select id="category">${categoryOptions}</select>
+      </div>
+      <div class="field">
+        <label for="marketplace">Marketplace</label>
+        <select id="marketplace">${marketplaceOptions}</select>
+      </div>
+      <div class="field">
+        <label for="platform">Platform</label>
+        <select id="platform">${platformOptions}</select>
       </div>
       <div class="field actions">
-        <button type="button" class="btn btn-primary" id="apply">Apply</button>
         <button type="button" class="btn" id="clear-filter">Clear Filters</button>
       </div>
     </div>
@@ -588,7 +736,10 @@ async function readCatalogue(limit, onProgress) {
   const collected = [];
 
   for (let page = 1; collected.length < limit; page += 1) {
-    const batch = await findProductKeywordPage({ page, pageSize: READ_BATCH });
+    // The page query is the application's own; withListingFacets then adds
+    // where each of those products is listed. Nothing already on the rows is
+    // read or changed by it.
+    const batch = await withListingFacets(await findProductKeywordPage({ page, pageSize: READ_BATCH }));
     if (batch.length === 0) break;
 
     collected.push(...batch);
@@ -662,6 +813,8 @@ async function main() {
   console.log(`  Products embedded  : ${data.rows.length.toLocaleString('en-GB')}`);
   console.log(`  Products with image: ${counts.withImage.toLocaleString('en-GB')}`);
   console.log(`  Categories         : ${data.categoryOrder.length.toLocaleString('en-GB')}`);
+  console.log(`  Marketplaces       : ${data.marketplaceOrder.length.toLocaleString('en-GB')}`);
+  console.log(`  Platforms          : ${data.platformOrder.length.toLocaleString('en-GB')}`);
   console.log(`  Primary keywords   : ${counts.primary.toLocaleString('en-GB')}`);
   console.log(`  Secondary keywords : ${counts.secondary.toLocaleString('en-GB')}`);
   console.log(`  Long-tail keywords : ${counts.longTail.toLocaleString('en-GB')}`);

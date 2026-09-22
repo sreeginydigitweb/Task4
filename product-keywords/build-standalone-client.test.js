@@ -113,7 +113,15 @@ function run(products) {
   return { elements, document, pagers, data };
 }
 
-/** A catalogue of n products, with a predictable spread of categories. */
+/**
+ * A catalogue of n products, with a predictable spread of categories,
+ * marketplaces and platforms.
+ *
+ * The facets deliberately overlap the way the real ones do: most products are
+ * listed in the UK, some in more than one marketplace, some on more than one
+ * platform, and every fourth product is listed NOWHERE - which is the case
+ * that must match neither dropdown and must never be given a value.
+ */
 const catalogue = (n) =>
   Array.from({ length: n }, (_, at) => ({
     id: at + 1,
@@ -121,6 +129,8 @@ const catalogue = (n) =>
     title: at % 3 === 0 ? `Vintage Lamp Holder ${at + 1}` : `Brass Door Handle ${at + 1}`,
     image: at % 5 === 0 ? null : `https://sin1.contabostorage.com/img/${at + 1}.jpg`,
     category: at % 3 === 0 ? 'Lamp Holder' : 'Door Handle',
+    marketplaces: at % 4 === 3 ? [] : at % 4 === 0 ? ['UK', 'Germany'] : ['UK'],
+    platforms: at % 4 === 3 ? [] : at % 4 === 0 ? ['EBAY', 'AMAZON'] : ['EBAY'],
     evidence: at % 2 === 0
       ? [{ source: 'amazon', label: 'Amazon', kind: 'search-keywords',
            detail: 'listings.amazon_listing_search_engine_keywords.keyword',
@@ -130,6 +140,18 @@ const catalogue = (n) =>
 
 const rowsDrawn = (elements) => elements.rows.children;
 const countText = (elements) => elements['count-top'].textContent;
+
+/**
+ * Type into the search box and press Enter.
+ *
+ * There is no Apply button any more, and typing on its own does nothing:
+ * Enter is what applies a search, so every test that searches goes through
+ * here rather than firing an 'input' the page no longer listens for.
+ */
+const typeSearch = (elements, value) => {
+  elements.search.value = value;
+  elements.search.fire('keydown', { key: 'Enter', preventDefault() {} });
+};
 
 // ---------------------------------------------------------------------------
 // It runs, and it draws the table.
@@ -220,8 +242,7 @@ test('a pill keeps the tooltip naming the record that proved it', () => {
 test('SEARCH narrows the table without any server', () => {
   const { elements } = run(catalogue(120));
 
-  elements.search.value = 'SKU0007';
-  elements.search.fire('input');
+  typeSearch(elements, 'SKU0007');
 
   assert.equal(rowsDrawn(elements).length, 1, 'one product matches');
   assert.equal(rowsDrawn(elements)[0].children[1].textContent, 'SKU0007');
@@ -231,8 +252,7 @@ test('SEARCH narrows the table without any server', () => {
 test('search matches the product name as well as the SKU and id', () => {
   const { elements } = run(catalogue(30));
 
-  elements.search.value = 'vintage lamp';
-  elements.search.fire('input');
+  typeSearch(elements, 'vintage lamp');
 
   const names = rowsDrawn(elements).map((r) => r.children[3].textContent);
   assert.ok(names.length > 0);
@@ -242,23 +262,43 @@ test('search matches the product name as well as the SKU and id', () => {
 test('a search matching nothing shows the empty state, not a stale table', () => {
   const { elements } = run(catalogue(30));
 
-  elements.search.value = 'nothing-matches-this';
-  elements.search.fire('input');
+  typeSearch(elements, 'nothing-matches-this');
 
   assert.equal(rowsDrawn(elements).length, 0);
   assert.equal(elements.empty.hidden, false, 'the empty note is shown');
   assert.match(countText(elements), /No products match/);
 });
 
-test('the APPLY button applies the current search and category', () => {
+test('there is no Apply button on the page at all', () => {
+  const { elements } = run(catalogue(30));
+
+  assert.equal(elements.apply, undefined, 'nothing with id="apply" is rendered');
+  assert.ok(elements['clear-filter'], 'Clear Filters is still there');
+});
+
+test('ENTER in the search box is what applies a search', () => {
   const { elements } = run(catalogue(90));
 
-  elements.search.value = 'Door Handle';
-  elements.apply.click();
+  typeSearch(elements, 'Door Handle');
 
   const names = rowsDrawn(elements).map((r) => r.children[3].textContent);
   assert.ok(names.length > 0);
   assert.ok(names.every((n) => n.includes('Door Handle')));
+});
+
+test('typing alone does not filter - the table waits for Enter', () => {
+  const { elements } = run(catalogue(120));
+
+  // Typed, and an 'input' event fired - the page no longer listens for one.
+  elements.search.value = 'SKU0007';
+  elements.search.fire('input');
+  assert.equal(rowsDrawn(elements).length, 50, 'still the unfiltered first page');
+
+  elements.search.fire('keydown', { key: 'a', preventDefault() {} });
+  assert.equal(rowsDrawn(elements).length, 50, 'and any other key leaves it alone');
+
+  elements.search.fire('keydown', { key: 'Enter', preventDefault() {} });
+  assert.equal(rowsDrawn(elements).length, 1, 'Enter applies it');
 });
 
 test('CATEGORY filtering works, and the count names the category', () => {
@@ -279,8 +319,7 @@ test('search and category narrow together', () => {
 
   elements.category.value = String(data.categories.indexOf('Door Handle'));
   elements.category.fire('change');
-  elements.search.value = 'SKU0011';
-  elements.search.fire('input');
+  typeSearch(elements, 'SKU0011');
 
   assert.equal(rowsDrawn(elements).length, 1);
   assert.equal(rowsDrawn(elements)[0].children[4].textContent, 'Door Handle');
@@ -289,8 +328,7 @@ test('search and category narrow together', () => {
 test('CLEAR FILTERS puts the whole catalogue back', () => {
   const { elements, data } = run(catalogue(120));
 
-  elements.search.value = 'SKU0007';
-  elements.search.fire('input');
+  typeSearch(elements, 'SKU0007');
   elements.category.value = String(data.categories.indexOf('Lamp Holder'));
   elements.category.fire('change');
 
@@ -300,6 +338,192 @@ test('CLEAR FILTERS puts the whole catalogue back', () => {
   assert.equal(elements.category.value, '', 'the category returns to All Categories');
   assert.equal(rowsDrawn(elements).length, 50, 'a full page again');
   assert.match(countText(elements), /of 120 products\./);
+});
+
+// ---------------------------------------------------------------------------
+// Marketplace and Platform - the same way, in the browser, with no server.
+// ---------------------------------------------------------------------------
+
+/** The option index a dropdown uses for one value. */
+const option = (data, which, value) => String(data[which].indexOf(value));
+
+test('the MARKETPLACE dropdown narrows the table', () => {
+  const { elements, data } = run(catalogue(120));
+
+  elements.marketplace.value = option(data, 'marketplaces', 'Germany');
+  elements.marketplace.fire('change');
+
+  // Every fourth product from index 0 is the one listed in Germany.
+  const ids = rowsDrawn(elements).map((r) => Number(r.children[2].textContent));
+  assert.ok(ids.length > 0);
+  assert.ok(ids.every((id) => (id - 1) % 4 === 0), 'only the German listings');
+  assert.match(countText(elements), /products in Germany\./);
+});
+
+test('the PLATFORM dropdown narrows the table', () => {
+  const { elements, data } = run(catalogue(120));
+
+  elements.platform.value = option(data, 'platforms', 'AMAZON');
+  elements.platform.fire('change');
+
+  const ids = rowsDrawn(elements).map((r) => Number(r.children[2].textContent));
+  assert.ok(ids.length > 0);
+  assert.ok(ids.every((id) => (id - 1) % 4 === 0), 'only the Amazon listings');
+  assert.match(countText(elements), /products in AMAZON\./);
+});
+
+test('a product listed nowhere is shown under All and matched by neither filter', () => {
+  const { elements, data } = run(catalogue(120));
+  const unlisted = (id) => (id - 1) % 4 === 3;
+
+  // It is there to begin with.
+  typeSearch(elements, 'SKU0004');
+  assert.equal(rowsDrawn(elements).length, 1, 'the unlisted product is in the catalogue');
+
+  for (const [id, which, value] of [['marketplace', 'marketplaces', 'UK'], ['platform', 'platforms', 'EBAY']]) {
+    const fresh = run(catalogue(120));
+    fresh.elements[id].value = option(fresh.data, which, value);
+    fresh.elements[id].fire('change');
+
+    const ids = rowsDrawn(fresh.elements).map((r) => Number(r.children[2].textContent));
+    assert.ok(!ids.some(unlisted), `no unlisted product matches ${value}`);
+  }
+});
+
+test('a product in several marketplaces is matched by ANY of them', () => {
+  const { elements, data } = run(catalogue(40));
+
+  for (const value of ['UK', 'Germany']) {
+    elements.marketplace.value = option(data, 'marketplaces', value);
+    elements.marketplace.fire('change');
+    const ids = rowsDrawn(elements).map((r) => Number(r.children[2].textContent));
+    assert.ok(ids.includes(1), `product 1 is listed in ${value} and matches it`);
+  }
+});
+
+test('all four filters narrow TOGETHER - search AND category AND marketplace AND platform', () => {
+  const { elements, data } = run(catalogue(200));
+
+  elements.category.value = String(data.categories.indexOf('Lamp Holder'));
+  elements.category.fire('change');
+  elements.marketplace.value = option(data, 'marketplaces', 'Germany');
+  elements.marketplace.fire('change');
+  elements.platform.value = option(data, 'platforms', 'AMAZON');
+  elements.platform.fire('change');
+
+  const rows = rowsDrawn(elements);
+  assert.ok(rows.length > 0, 'the combination still matches something');
+  for (const row of rows) {
+    const id = Number(row.children[2].textContent);
+    assert.equal(row.children[4].textContent, 'Lamp Holder');
+    assert.equal((id - 1) % 4, 0, 'and it is one of the multi-marketplace products');
+    assert.equal((id - 1) % 3, 0, 'and a Lamp Holder');
+  }
+
+  // Now the search as well, on top of the three dropdowns.
+  const first = Number(rows[0].children[2].textContent);
+  typeSearch(elements, `SKU${String(first).padStart(4, '0')}`);
+  assert.equal(rowsDrawn(elements).length, 1, 'all four together leave exactly the one');
+
+  // A combination nothing satisfies is empty, not a partial match.
+  elements.platform.value = option(data, 'platforms', 'EBAY');
+  elements.platform.fire('change');
+  typeSearch(elements, 'SKU0002');
+  assert.equal(rowsDrawn(elements).length, 0, 'AND, not OR');
+  assert.equal(elements.empty.hidden, false);
+});
+
+test('CLEAR FILTERS resets all FOUR filters and returns the whole catalogue', () => {
+  const { elements, data } = run(catalogue(120));
+
+  typeSearch(elements, 'SKU0005');
+  elements.category.value = String(data.categories.indexOf('Door Handle'));
+  elements.category.fire('change');
+  elements.marketplace.value = option(data, 'marketplaces', 'UK');
+  elements.marketplace.fire('change');
+  elements.platform.value = option(data, 'platforms', 'EBAY');
+  elements.platform.fire('change');
+
+  elements['clear-filter'].click();
+
+  assert.equal(elements.search.value, '', 'the search box is emptied');
+  assert.equal(elements.category.value, '', 'All Categories');
+  assert.equal(elements.marketplace.value, '', 'All Marketplaces');
+  assert.equal(elements.platform.value, '', 'All Platforms');
+  assert.equal(rowsDrawn(elements).length, 50, 'a full page again');
+  assert.match(countText(elements), /Showing 1–50 of 120 products\./);
+  assert.equal(elements['position-top'].textContent, '1 / 3', 'and back to page one');
+});
+
+test('the count line names every filter that is set', () => {
+  const { elements, data } = run(catalogue(120));
+
+  elements.category.value = String(data.categories.indexOf('Lamp Holder'));
+  elements.category.fire('change');
+  elements.marketplace.value = option(data, 'marketplaces', 'UK');
+  elements.marketplace.fire('change');
+  elements.platform.value = option(data, 'platforms', 'EBAY');
+  elements.platform.fire('change');
+
+  assert.match(countText(elements), /products in Lamp Holder \+ UK \+ EBAY\./);
+});
+
+test('choosing a marketplace or a platform resets to page one', () => {
+  for (const [id, which, value] of [['marketplace', 'marketplaces', 'UK'], ['platform', 'platforms', 'EBAY']]) {
+    const { elements, data } = run(catalogue(400));
+
+    elements['next-top'].click();
+    elements['next-top'].click();
+    assert.equal(elements['position-top'].textContent, '3 / 8', `paged away before the ${id} filter`);
+
+    elements[id].value = option(data, which, value);
+    elements[id].fire('change');
+
+    assert.ok(elements['position-top'].textContent.startsWith('1 /'), `${id} went back to page one`);
+    assert.equal(rowsDrawn(elements)[0].children[2].textContent, '1', 'and drew the first page');
+  }
+});
+
+test('each dropdown applies on its own change, with no button to press', () => {
+  for (const [id, which, value] of [
+    ['category', 'categories', 'Lamp Holder'],
+    ['marketplace', 'marketplaces', 'Germany'],
+    ['platform', 'platforms', 'AMAZON'],
+  ]) {
+    const { elements, data } = run(catalogue(120));
+    const before = rowsDrawn(elements).length;
+
+    elements[id].value = which === 'categories'
+      ? String(data.categories.indexOf(value))
+      : option(data, which, value);
+    elements[id].fire('change');
+
+    assert.match(countText(elements), new RegExp(`products in ${value.replace('&', '&')}\\.`), `${id} applied itself`);
+    assert.ok(rowsDrawn(elements).length > 0, `${id} still shows products`);
+    assert.ok(before === 50, 'and the page was full before the change');
+  }
+});
+
+test('a dropdown change picks up whatever is already typed in the search box', () => {
+  // readControls() re-reads ALL FOUR controls, so a search typed but not yet
+  // Entered is applied by the next dropdown change rather than being lost.
+  const { elements, data } = run(catalogue(120));
+
+  elements.search.value = 'SKU0005';
+  elements.marketplace.value = option(data, 'marketplaces', 'UK');
+  elements.marketplace.fire('change');
+
+  assert.equal(rowsDrawn(elements).length, 1, 'the typed search counted too');
+  assert.equal(rowsDrawn(elements)[0].children[1].textContent, 'SKU0005');
+});
+
+test('neither filter adds a tenth cell to a row', () => {
+  const { elements, data } = run(catalogue(60));
+
+  elements.marketplace.value = option(data, 'marketplaces', 'UK');
+  elements.marketplace.fire('change');
+
+  for (const row of rowsDrawn(elements)) assert.equal(row.children.length, 9, 'still nine cells');
 });
 
 // ---------------------------------------------------------------------------
@@ -347,8 +571,7 @@ test('filtering resets to page one rather than stranding the reader', () => {
   elements['next-top'].click();
   assert.equal(elements['position-top'].textContent, '3 / 4');
 
-  elements.search.value = 'Door Handle';
-  elements.search.fire('input');
+  typeSearch(elements, 'Door Handle');
 
   assert.equal(elements['position-top'].textContent.startsWith('1 /'), true, 'back to the first page');
 });
