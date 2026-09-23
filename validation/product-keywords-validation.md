@@ -404,12 +404,65 @@ same word would invent a provenance the code cannot support.
 | Cabinet Handle | Competitor | Product Type |
 | Cupboard Handle | Competitor | Product Type |
 
+## Marketplace and Platform round
+
+The standalone page gained two filters, **Marketplace** and **Platform**, read
+by `listing-facets.js`. A code review then found three faults, fixed in
+`c99f772`: clearing the search box left the table filtered by the old term,
+`DB_ORDERS_SCHEMA` reached the SQL unchecked, and listing SKUs were trimmed
+where `resources.js` and `source.js` compare them untrimmed. `index.html` was
+rebuilt from `ledsone` on 2026-09-23 after the fixes.
+
+Every count below was computed twice: once from the built `index.html`, and
+once by an independent SQL query written for this check, not the
+application's own.
+
+### Checks carried out
+
+| # | Check | Result |
+|---|---|---|
+| 128 | Test suite | **Pass** - 338 tests, 338 passing |
+| 129 | Database connection | **Pass** - `ledsone` as `varmen_user`, read-only, no write privilege on `inventory.products`; `order_management.sub_source` (119 rows) and `source` (17 rows) readable |
+| 130 | Marketplace values and counts are ledsone's own | **Pass** - all 17 marketplaces match the database exactly, UK 31,064 down to Saudi Arabia 43. No value is written in the code |
+| 131 | Platform values and counts are ledsone's own | **Pass** - EBAY 25,791, SHOPIFY 20,444, AMAZON 18,994, B&Q 4,185; identical in page and database |
+| 132 | A product with no listing is shown with nothing | **Pass** - 10,662 products carry two empty lists, and they are exactly the products the database has no listing for. The database now reports 10,664: the two extra, ids 44734 and 44735 ("Combo Default Title."), were added after the build and are not in the page |
+| 133 | Filters combine | **Pass** - Germany 16,223, then Germany + B&Q 2,635; the database gives 2,635 for the same pair |
+| 134 | Emptying the search box drops the search at once | **Pass** - in a headless browser: a search with no match shows 0 rows; emptying the box returns 50 rows and "Showing 1–50 of 44,724 products." A client test fails on the old code and passes on the fix |
+| 135 | Emptying the search box keeps the dropdowns | **Pass** - Germany + B&Q + "pendant" gives 108; emptying the box returns to 2,635 with both dropdowns still set |
+| 136 | Typing alone still waits for Enter | **Pass** - unchanged client test: an `input` with text in the box leaves the table alone |
+| 137 | Clear Filters resets everything | **Pass** - back to 44,724 |
+| 138 | `DB_ORDERS_SCHEMA` is checked | **Pass** - `x;drop` and `Order-Mgmt` are refused at startup; an empty value falls back to `order_management` |
+| 139 | Listing SKUs join exactly as elsewhere | **Pass** - no `btrim` on any SKU in `listing-facets.js`; the same `coalesce(nullif(mapped_sku, ''), sku)` as `resources.js` |
+| 140 | No console errors, no failed requests | **Pass** - both the live route and `index.html` |
+| 141 | Second database untouched | **Pass** - `readonly.test.js`; `order_management` is read, `order_management_copy` is not |
+
+### Space-padded SKUs, as measured
+
+14 products have a SKU with a leading or trailing space. None of them gets a
+marketplace or platform, before the fix or after it: before, the listing side
+was trimmed but the product was looked up by its padded SKU; now neither side
+is trimmed and no listing carries the padded spelling. Separately, 64 Amazon
+listings carry a padded SKU; before the fix they were credited to 21 products
+that `resources.js` never links them to, and now they are not. This page and
+the rest of the application now agree on all of them. Whether those 14
+products *should* match their trimmed listings is a data question, and is not
+answered here.
+
+### What "Germany + B&Q" means
+
+The two dropdowns are independent lists per product. Germany + B&Q is a
+product listed **somewhere** in Germany **and somewhere** on B&Q, not
+necessarily a B&Q listing in Germany. That is how the page is built, and the
+database check (133) used the same meaning.
+
 ## Not validated
 
 - **Browser rendering.** The HTML was validated structurally, not opened in a
   browser. No layout or accessibility review was carried out. This includes the
   Tags column and the rearranged pagination bars: the markup, the CSS rules and
-  the rendered values were checked, but not how they look on screen.
+  the rendered values were checked, but not how they look on screen. From the
+  Marketplace and Platform round on, the standalone page's search and filters
+  were driven in a headless browser, but its layout still was not reviewed.
 - **Keyword completeness.** 24 of 50 products on page 1 carry keyword text.
   Whether the remaining 26 genuinely have none, or have keywords that this
   relationship does not reach, was not investigated - the join was measured
