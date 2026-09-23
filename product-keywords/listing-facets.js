@@ -71,24 +71,21 @@
  * statement, parameterised, over the schema constants below.
  */
 
-import { LISTINGS_SCHEMA, rows } from './db.js';
+import { LISTINGS_SCHEMA, ORDERS_SCHEMA, rows } from './db.js';
 
 /**
- * The schema holding ledsone's platform list.
+ * The four listing tables, and how each one spells its product SKU.
  *
- * `order_management` - NOT `order_management_copy`, which is the second
- * database this project is not permitted to read and which is not referenced
- * anywhere in it.
+ * Untrimmed, exactly as resources.js and source.js compare it. Trimming here
+ * alone would make this module disagree with them about which product a
+ * space-padded listing belongs to.
  */
-const ORDERS_SCHEMA = process.env.DB_ORDERS_SCHEMA ?? 'order_management';
-
-/** The four listing tables, and how each one spells its product SKU. */
 const LISTING_TABLES = Object.freeze([
-  { table: 'amazon_listings', sku: `coalesce(nullif(btrim(l.mapped_sku), ''), btrim(l.sku))` },
+  { table: 'amazon_listings', sku: `coalesce(nullif(l.mapped_sku, ''), l.sku)` },
   // ebay_listings has no mapped_sku column.
-  { table: 'ebay_listings', sku: 'btrim(l.sku)' },
-  { table: 'shopify_listings', sku: `coalesce(nullif(btrim(l.mapped_sku), ''), btrim(l.sku))` },
-  { table: 'bandq_listings', sku: `coalesce(nullif(btrim(l.mapped_sku), ''), btrim(l.sku))` },
+  { table: 'ebay_listings', sku: 'l.sku' },
+  { table: 'shopify_listings', sku: `coalesce(nullif(l.mapped_sku, ''), l.sku)` },
+  { table: 'bandq_listings', sku: `coalesce(nullif(l.mapped_sku, ''), l.sku)` },
 ]);
 
 /** The union of every listing row, as (sku, site, sub_source). */

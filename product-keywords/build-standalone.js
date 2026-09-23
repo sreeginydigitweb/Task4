@@ -516,7 +516,7 @@ function readControls() {
 
 /* There is NO Apply button. Each control applies itself:
 
-     SEARCH      on Enter
+     SEARCH      on Enter, or the moment the box is emptied
      DROPDOWNS   the moment the choice changes
 
    Every one of them goes through refilter(1), which re-reads ALL FOUR
@@ -528,6 +528,13 @@ function readControls() {
    behaviour; the filtering is this line, not a form submission. */
 el('search').addEventListener('keydown', function (event) {
   if (event.key === 'Enter') { event.preventDefault(); readControls(); refilter(1); }
+});
+
+/* The one exception to Enter: EMPTYING the box - its (x) button, or deleting
+   the text - drops the search at once, so an empty box never sits over a
+   table still filtered by the old term. Typing anything else still waits. */
+el('search').addEventListener('input', function () {
+  if (el('search').value === '' && state.search !== '') { readControls(); refilter(1); }
 });
 
 /* CATEGORY, MARKETPLACE, PLATFORM - immediately on change. */

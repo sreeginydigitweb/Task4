@@ -137,6 +137,16 @@ export const INVENTORY_SCHEMA = schemaName('DB_INVENTORY_SCHEMA', 'inventory');
 export const LISTINGS_SCHEMA = schemaName('DB_LISTINGS_SCHEMA', 'listings');
 
 /**
+ * ledsone's platform list: `sub_source` and `source` only, read by
+ * listing-facets.js to name the platform behind each listing's selling account.
+ *
+ * `order_management` - NOT `order_management_copy`, which is the second
+ * database this project is not permitted to read and which is not referenced
+ * anywhere in it.
+ */
+export const ORDERS_SCHEMA = schemaName('DB_ORDERS_SCHEMA', 'order_management');
+
+/**
  * Is this running as a serverless function rather than as a long-lived server?
  *
  * Vercel sets VERCEL=1 in every function environment. The difference matters

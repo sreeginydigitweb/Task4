@@ -146,7 +146,8 @@ const countText = (elements) => elements['count-top'].textContent;
  *
  * There is no Apply button any more, and typing on its own does nothing:
  * Enter is what applies a search, so every test that searches goes through
- * here rather than firing an 'input' the page no longer listens for.
+ * here rather than firing an 'input', which the page ignores unless the box
+ * has just been emptied.
  */
 const typeSearch = (elements, value) => {
   elements.search.value = value;
@@ -289,7 +290,7 @@ test('ENTER in the search box is what applies a search', () => {
 test('typing alone does not filter - the table waits for Enter', () => {
   const { elements } = run(catalogue(120));
 
-  // Typed, and an 'input' event fired - the page no longer listens for one.
+  // Typed, and an 'input' event fired - only emptying the box acts on one.
   elements.search.value = 'SKU0007';
   elements.search.fire('input');
   assert.equal(rowsDrawn(elements).length, 50, 'still the unfiltered first page');
@@ -299,6 +300,19 @@ test('typing alone does not filter - the table waits for Enter', () => {
 
   elements.search.fire('keydown', { key: 'Enter', preventDefault() {} });
   assert.equal(rowsDrawn(elements).length, 1, 'Enter applies it');
+});
+
+test('emptying the search box drops the search without waiting for Enter', () => {
+  const { elements } = run(catalogue(120));
+
+  typeSearch(elements, 'SKU0007');
+  assert.equal(rowsDrawn(elements).length, 1);
+
+  // The (x) button, or deleting the text: an 'input' with an empty box.
+  elements.search.value = '';
+  elements.search.fire('input');
+  assert.equal(rowsDrawn(elements).length, 50, 'back to the unfiltered first page');
+  assert.match(countText(elements), /of 120 products\./);
 });
 
 test('CATEGORY filtering works, and the count names the category', () => {
